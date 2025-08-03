@@ -1,0 +1,7 @@
+.idea
+.vscode
+.trae
+.DS_Store
+
+*.log
+logs/

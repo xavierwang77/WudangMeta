@@ -1,0 +1,23 @@
+{
+  "dbms": {
+    "host": "localhost",
+    "port": "6680",
+    "user": "wugong_user",
+    "pwd": "wugong+pwd",
+    "db": "wugong_db"
+  },
+  "server": {
+    "host": "localhost",
+    "port": "3388"
+  },
+  "sms": {
+    "enable": true,
+    "platform": "shx",
+    "data": {
+      "template": "【北京启航源科技】您正在登录小程序，验证码为：%s。五分钟内有效，请勿提供给他人。",
+      "apiUrl": "http://139.159.195.164:8080/edeeserver/sendSMS4Utf8.do",
+      "userName": "901488",
+      "password": "666666"
+    }
+  }
+}
