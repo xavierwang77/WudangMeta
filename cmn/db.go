@@ -100,9 +100,12 @@ func initTable(db *gorm.DB) error {
 	// 自动迁移
 	err := db.AutoMigrate(
 		&TUser{},
+		&TUserExternal{},
+		&TSmsCodes{},
 		&TRaffleWinners{},
-		&RaffleLogTable{},
-		&TSmsCodes{})
+		&TRaffleLog{},
+		&TMetaAsset{},
+		&TUserAsset{})
 	if err != nil {
 		logger.Error("auto migrate failed: " + err.Error())
 		return err
@@ -114,6 +117,33 @@ func initTable(db *gorm.DB) error {
 
 // 初始化视图
 func initView(db *gorm.DB) error {
+	// 构造一个子查询，把两张表连接并选出所有需要的列
+	q := db.
+		Table("t_user_asset AS ua").
+		Select(`
+        ua.id,
+        ua.user_id,
+        ua.meta_asset_id,
+        ma.name   AS meta_name,
+        ma.cover_img AS meta_cover_img,
+        ua.name,
+        ua.theme_name,
+        ua.external_id,
+        ua.cover_img,
+        ua.created_at,
+        ua.updated_at
+    `).
+		Joins("LEFT JOIN t_meta_asset AS ma ON ua.meta_asset_id = ma.id")
+
+	// 创建视图
+	err := db.Migrator().CreateView(
+		VUserAssetMeta{}.TableName(),
+		gorm.ViewOption{Query: q},
+	)
+	if err != nil {
+		logger.Error("create v_user_asset_meta failed: " + err.Error())
+		return err
+	}
 
 	logger.Info("PG view initialed")
 

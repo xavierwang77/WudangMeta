@@ -8,6 +8,7 @@ import (
 	"WugongMeta/cmn/sms"
 	"WugongMeta/router"
 	"WugongMeta/serve/asset"
+	"WugongMeta/serve/ubanquan"
 	"WugongMeta/serve/user_mgt"
 	"fmt"
 	"github.com/spf13/viper"
@@ -55,6 +56,7 @@ var serveCmd = &cobra.Command{
 		// 初始化服务模块
 		user_mgt.Init()
 		asset.Init()
+		ubanquan.Init()
 
 		cmn.MiniLogger.Info("[ YES ] all modules initialed", zap.String("version", cmn.Version))
 

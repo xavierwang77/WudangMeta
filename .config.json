@@ -10,6 +10,10 @@
     "host": "localhost",
     "port": "3388"
   },
+  "session": {
+    "authKey": "3aif1uubYSo1jQx82l3KUWJg1ME5LoPi",
+    "encryptionKey": "ORDb3jHc9jxjULb8cz1oXuhAkzCTIpS9"
+  },
   "sms": {
     "enable": true,
     "platform": "shx",
@@ -19,5 +23,9 @@
       "userName": "901488",
       "password": "666666"
     }
+  },
+  "ubanquan": {
+    "appId": "aaa",
+    "appSecret": "bbb"
   }
 }

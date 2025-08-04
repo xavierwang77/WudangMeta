@@ -1,14 +1,11 @@
 package asset
 
-import (
-	"WugongMeta/cmn"
-	"go.uber.org/zap"
-)
+type Handler interface {
+}
 
-var z *zap.Logger
+type handler struct {
+}
 
-func Init() {
-	z = cmn.GetLogger()
-
-	cmn.MiniLogger.Info("[ OK ] asset module initialized")
+func NewHandler() Handler {
+	return &handler{}
 }

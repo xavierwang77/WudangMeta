@@ -7,7 +7,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
@@ -21,23 +20,11 @@ type Handler interface {
 
 type handler struct {
 	smsSrv sms.Service
-	store  *sessions.CookieStore
 }
 
 func NewHandler() Handler {
-	// 创建session store，使用固定密钥（生产环境应使用环境变量）
-	store := sessions.NewCookieStore([]byte("wugong-meta-secret-key-32-bytes!!"))
-	store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 30, // 30天
-		HttpOnly: true,
-		Secure:   false, // 开发环境设为false，生产环境应设为true
-		SameSite: http.SameSiteLaxMode,
-	}
-
 	return &handler{
 		smsSrv: sms.NewService(),
-		store:  store,
 	}
 }
 
@@ -222,7 +209,7 @@ func (h *handler) SMSLogin(c *gin.Context) {
 	}
 
 	// 创建session
-	session, err := h.store.Get(c.Request, "user-session")
+	session, err := sessionStore.Get(c.Request, userSessionKey)
 	if err != nil {
 		z.Error("failed to get session", zap.Error(err))
 		c.JSON(http.StatusOK, cmn.ReplyProto{
