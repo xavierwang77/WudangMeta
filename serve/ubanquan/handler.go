@@ -111,11 +111,12 @@ func (h *handler) Authentication(c *gin.Context) {
 
 	// 查找或创建用户外部信息记录
 	var userExternal cmn.TUserExternal
-	err = cmn.GormDB.Where("user_id = ?", userId).First(&userExternal).Error
+	err = cmn.GormDB.Where("user_id = ? AND platform = ?", userId, assetPlatform).First(&userExternal).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 创建新记录
 			userExternal = cmn.TUserExternal{
+				Platform: assetPlatform,
 				UserId:   userId,
 				OpenId:   ubanquanResp.Data.OpenId,
 				NickName: ubanquanResp.Data.NickName,

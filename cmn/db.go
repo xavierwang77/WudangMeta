@@ -124,7 +124,7 @@ func initView(db *gorm.DB) error {
         ua.id,
         ua.user_id,
         ua.meta_asset_id,
-        ma.name   AS meta_name,
+        ma.name   AS meta_asset_name,
         ma.cover_img AS meta_cover_img,
         ua.name,
         ua.theme_name,

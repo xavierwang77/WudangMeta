@@ -40,14 +40,15 @@ func (TUser) TableName() string {
 }
 
 type TUserExternal struct {
-	Id              int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"` // ID
-	UserId          uuid.UUID `gorm:"column:user_id;type:uuid;not null;index"`        // 用户ID
-	AccessToken     string    `gorm:"column:access_token;type:text"`                  // 第三方平台访问令牌
-	RefreshToken    string    `gorm:"column:refresh_token;type:text"`                 // 第三方平台刷新令牌
-	TokenExpireTime int64     `gorm:"column:token_expire_time;type:bigint"`           // 第三方平台令牌过期时间
-	OpenId          string    `gorm:"column:open_id;type:text;index"`                 // 第三方平台用户ID
-	NickName        string    `gorm:"column:nick_name;type:text"`                     // 第三方平台用户昵称
-	Avatar          string    `gorm:"column:avatar;type:text"`                        // 第三方平台用户头像
+	Id              int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`  // ID
+	UserId          uuid.UUID `gorm:"column:user_id;type:uuid;not null;index"`         // 用户ID
+	Platform        string    `gorm:"column:platform;type:varchar(30);not null;index"` // 第三方平台标识
+	AccessToken     string    `gorm:"column:access_token;type:text"`                   // 第三方平台访问令牌
+	RefreshToken    string    `gorm:"column:refresh_token;type:text"`                  // 第三方平台刷新令牌
+	TokenExpireTime int64     `gorm:"column:token_expire_time;type:bigint"`            // 第三方平台令牌过期时间
+	OpenId          string    `gorm:"column:open_id;type:text;index"`                  // 第三方平台用户ID
+	NickName        string    `gorm:"column:nick_name;type:text"`                      // 第三方平台用户昵称
+	Avatar          string    `gorm:"column:avatar;type:text"`                         // 第三方平台用户头像
 }
 
 func (TUserExternal) TableName() string {
@@ -132,17 +133,17 @@ func (TUserAsset) TableName() string {
 
 // VUserAssetMeta 用户资产视图
 type VUserAssetMeta struct {
-	Id           int64     `gorm:"column:id"`
-	UserId       uuid.UUID `gorm:"column:user_id"`
-	MetaAssetId  int64     `gorm:"column:meta_asset_id"`
-	MetaName     string    `gorm:"column:meta_name"`
-	MetaCoverImg string    `gorm:"column:meta_cover_img"`
-	Name         string    `gorm:"column:name"`
-	ThemeName    string    `gorm:"column:theme_name"`
-	ExternalNo   string    `gorm:"column:external_id"`
-	CoverImg     string    `gorm:"column:cover_img"`
-	CreatedAt    int64     `gorm:"column:created_at"`
-	UpdatedAt    int64     `gorm:"column:updated_at"`
+	Id            int64     `gorm:"column:id"`
+	UserId        uuid.UUID `gorm:"column:user_id"`
+	MetaAssetId   int64     `gorm:"column:meta_asset_id"`
+	MetaAssetName string    `gorm:"column:meta_asset_name"`
+	MetaCoverImg  string    `gorm:"column:meta_cover_img"`
+	Name          string    `gorm:"column:name"`
+	ThemeName     string    `gorm:"column:theme_name"`
+	ExternalNo    string    `gorm:"column:external_id"`
+	CoverImg      string    `gorm:"column:cover_img"`
+	CreatedAt     int64     `gorm:"column:created_at"`
+	UpdatedAt     int64     `gorm:"column:updated_at"`
 }
 
 func (VUserAssetMeta) TableName() string {
