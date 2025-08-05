@@ -76,6 +76,65 @@ func InitializeUserPoints(ctx context.Context, db *gorm.DB, userId uuid.UUID) er
 	return nil
 }
 
+// AddUserPointsByAsset 根据指定的元资产ID和数量累加用户积分
+// 查询元资产价值，计算积分并累加到用户现有积分上
+func AddUserPointsByAsset(ctx context.Context, db *gorm.DB, userId uuid.UUID, metaAssetId int64, assetCount int64) error {
+	if db == nil {
+		e := fmt.Errorf("database connection is nil")
+		z.Error(e.Error())
+		return e
+	}
+	if userId == uuid.Nil {
+		e := fmt.Errorf("userId is nil")
+		z.Error(e.Error())
+		return e
+	}
+	if metaAssetId <= 0 {
+		e := fmt.Errorf("metaAssetId must be positive")
+		z.Error(e.Error())
+		return e
+	}
+	if assetCount <= 0 {
+		e := fmt.Errorf("assetCount must be positive")
+		z.Error(e.Error())
+		return e
+	}
+
+	// 查询元资产价值
+	var metaAsset cmn.TMetaAsset
+	err := db.Where("id = ?", metaAssetId).First(&metaAsset).Error
+	if err != nil {
+		e := fmt.Errorf("failed to query meta asset: %w, metaAssetId: %d", err, metaAssetId)
+		z.Error(e.Error())
+		return e
+	}
+
+	// 计算要累加的积分
+	assetPoints := metaAsset.Value * float64(assetCount)
+
+	// 查询用户现有积分记录
+	var userPoints cmn.TUserPoints
+	err = db.Where("user_id = ?", userId).First(&userPoints).Error
+	if err != nil {
+		e := fmt.Errorf("failed to query user points: %w, userId: %s", err, userId.String())
+		z.Error(e.Error())
+		return e
+	}
+
+	// 累加积分到原有积分上
+	newTotalPoints := userPoints.DefaultPoints + assetPoints
+
+	// 更新积分记录
+	err = db.Model(&userPoints).Update("default_points", newTotalPoints).Error
+	if err != nil {
+		e := fmt.Errorf("failed to update user points: %w, userId: %s", err, userId.String())
+		z.Error(e.Error())
+		return e
+	}
+
+	return nil
+}
+
 // AddAllUserPointsFromAssets 根据资产计算并累加到已存在的用户积分
 // 自动遍历积分表中的所有用户，计算其资产总价值并累加到现有积分上
 func AddAllUserPointsFromAssets(ctx context.Context, db *gorm.DB) []error {

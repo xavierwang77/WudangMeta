@@ -16,15 +16,15 @@ func InitRoutes(r *gin.Engine) {
 	// 路由组 /api
 	api := r.Group("/api")
 	{
-		api.GET("/sms-code", userMgtHandler.SendSMSCode)   // 发送短信验证码
-		api.POST("/login/by-sms", userMgtHandler.SMSLogin) // 短信验证码登录
+		api.GET("/sms-code", userMgtHandler.HandleSendSMSCode)   // 发送短信验证码
+		api.POST("/login/by-sms", userMgtHandler.HandleSMSLogin) // 短信验证码登录
 
 		// 需要认证的路由组
 		authApi := api.Group("/")
 		authApi.Use(user_mgt.AuthMiddleware())
 		{
-			api.GET("/ubanquan/authentication", ubanquanHandler.Authentication) // 优版权用户授权
-			api.PUT("/ubanquan/asset", ubanquanHandler.UpdateMyAsset)           // 更新优版权用户资产
+			api.GET("/ubanquan/authentication", ubanquanHandler.HandleAuthentication) // 优版权用户授权
+			api.PUT("/ubanquan/asset", ubanquanHandler.HandleUpdateMyAsset)           // 更新优版权用户资产
 		}
 	}
 }

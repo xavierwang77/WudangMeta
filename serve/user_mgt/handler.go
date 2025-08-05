@@ -16,8 +16,8 @@ import (
 )
 
 type Handler interface {
-	SendSMSCode(c *gin.Context)
-	SMSLogin(c *gin.Context)
+	HandleSendSMSCode(c *gin.Context)
+	HandleSMSLogin(c *gin.Context)
 }
 
 type handler struct {
@@ -30,8 +30,8 @@ func NewHandler() Handler {
 	}
 }
 
-// SendSMSCode 发送SMS验证码
-func (h *handler) SendSMSCode(c *gin.Context) {
+// HandleSendSMSCode 处理发送SMS验证码
+func (h *handler) HandleSendSMSCode(c *gin.Context) {
 	phone := c.Query("mobilePhone")
 	if phone == "" {
 		z.Error("phone number is empty")
@@ -85,8 +85,8 @@ func (h *handler) SendSMSCode(c *gin.Context) {
 	return
 }
 
-// SMSLogin 使用短信验证码登录
-func (h *handler) SMSLogin(c *gin.Context) {
+// HandleSMSLogin 处理使用短信验证码登录
+func (h *handler) HandleSMSLogin(c *gin.Context) {
 	var req cmn.ReqProto
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
@@ -190,7 +190,6 @@ func (h *handler) SMSLogin(c *gin.Context) {
 				err = points.InitializeUserPoints(c, tx, userId)
 				if err != nil {
 					e := fmt.Errorf("failed to initialize user points: %w, userId: %s", err, userId.String())
-					z.Error(e.Error())
 					msg = "初始化用户积分失败"
 					status = -1
 					return e
@@ -252,7 +251,6 @@ func (h *handler) SMSLogin(c *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		z.Error("transaction failed", zap.Error(err))
 		c.JSON(http.StatusOK, cmn.ReplyProto{
 			Status: status,
 			Msg:    fmt.Sprintf("登录失败: %s", msg),

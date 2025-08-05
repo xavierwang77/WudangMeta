@@ -2,6 +2,7 @@ package ubanquan
 
 import (
 	"WugongMeta/cmn"
+	"WugongMeta/serve/points"
 	"WugongMeta/serve/user_mgt"
 	"encoding/json"
 	"errors"
@@ -16,8 +17,8 @@ import (
 )
 
 type Handler interface {
-	Authentication(c *gin.Context)
-	UpdateMyAsset(c *gin.Context)
+	HandleAuthentication(c *gin.Context)
+	HandleUpdateMyAsset(c *gin.Context)
 }
 
 type handler struct {
@@ -27,8 +28,8 @@ func NewHandler() Handler {
 	return &handler{}
 }
 
-// Authentication 优版权用户授权
-func (h *handler) Authentication(c *gin.Context) {
+// HandleAuthentication 处理优版权用户授权
+func (h *handler) HandleAuthentication(c *gin.Context) {
 	// 从 query 参数获取 code
 	code := c.Query("code") // 如果参数不存在会返回空字符串
 	if code == "" {
@@ -174,9 +175,9 @@ func (h *handler) Authentication(c *gin.Context) {
 	return
 }
 
-// UpdateMyAsset 更新我的优版权资产
+// HandleUpdateMyAsset 处理更新我的优版权资产
 // 从优版权API获取用户资产信息并同步到本地数据库
-func (h *handler) UpdateMyAsset(c *gin.Context) {
+func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 	// 获取当前用户ID
 	userId, ok := user_mgt.GetCurrentUserID(c)
 	if !ok {
@@ -331,6 +332,15 @@ func (h *handler) UpdateMyAsset(c *gin.Context) {
 					z.Error(e.Error())
 					status = -1
 					msg = "创建用户资产失败"
+					return e
+				}
+
+				// 给用户增加该资产积分
+				err = points.AddUserPointsByAsset(c, tx, userId, metaAsset.Id, 1)
+				if err != nil {
+					e := fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), metaAsset.Id)
+					status = -1
+					msg = "添加用户积分失败"
 					return e
 				}
 

@@ -12,7 +12,7 @@ import (
 )
 
 type Handler interface {
-	QueryMyAssets(c *gin.Context)
+	HandleQueryMyAssets(c *gin.Context)
 }
 
 type handler struct {
@@ -22,8 +22,8 @@ func NewHandler() Handler {
 	return &handler{}
 }
 
-// QueryMyAssets 查询我的资产
-func (h *handler) QueryMyAssets(c *gin.Context) {
+// HandleQueryMyAssets 处理查询我的资产
+func (h *handler) HandleQueryMyAssets(c *gin.Context) {
 	// 获取当前用户ID
 	userId, ok := user_mgt.GetCurrentUserID(c)
 	if !ok {
