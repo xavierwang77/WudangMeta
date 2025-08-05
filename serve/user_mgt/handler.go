@@ -263,7 +263,6 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "登录成功",
-		Data:   []byte(`{"userId":"` + user.Id.String() + `","mobilePhone":"` + user.MobilePhone + `","nickName":"` + user.NickName + `"}`),
 	})
 	return
 }

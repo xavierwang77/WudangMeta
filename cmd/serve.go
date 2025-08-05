@@ -8,6 +8,7 @@ import (
 	"WugongMeta/cmn/sms"
 	"WugongMeta/router"
 	"WugongMeta/serve/asset"
+	"WugongMeta/serve/points"
 	"WugongMeta/serve/ubanquan"
 	"WugongMeta/serve/user_mgt"
 	"fmt"
@@ -57,6 +58,7 @@ var serveCmd = &cobra.Command{
 		user_mgt.Init()
 		asset.Init()
 		ubanquan.Init()
+		points.Init()
 
 		cmn.MiniLogger.Info("[ YES ] all modules initialed", zap.String("version", cmn.Version))
 

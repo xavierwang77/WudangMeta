@@ -101,6 +101,7 @@ func initTable(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&TUser{},
 		&TUserExternal{},
+		&TUserPoints{},
 		&TSmsCodes{},
 		&TRaffleWinners{},
 		&TRaffleLog{},
