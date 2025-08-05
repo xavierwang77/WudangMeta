@@ -1,4 +1,4 @@
-package points
+package points_core
 
 import (
 	"WugongMeta/cmn"

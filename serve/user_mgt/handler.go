@@ -2,8 +2,8 @@ package user_mgt
 
 import (
 	"WugongMeta/cmn"
+	"WugongMeta/cmn/points_core"
 	"WugongMeta/cmn/sms"
-	"WugongMeta/serve/points"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -169,9 +169,8 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 用户不存在，创建新用户
-				userId := uuid.New()
 				user = cmn.TUser{
-					Id:          userId,
+					Id:          uuid.New(),
 					MobilePhone: d.MobilePhone,
 					NickName:    d.MobilePhone, // 默认昵称为手机号
 					Status:      "00",          // 启用状态
@@ -185,16 +184,6 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 					status = -1
 					return e
 				}
-
-				// 初始化新用户积分
-				err = points.InitializeUserPoints(c, tx, userId)
-				if err != nil {
-					e := fmt.Errorf("failed to initialize user points: %w, userId: %s", err, userId.String())
-					msg = "初始化用户积分失败"
-					status = -1
-					return e
-				}
-
 				z.Info("new user registered", zap.String("phone", d.MobilePhone), zap.String("userId", user.Id.String()))
 			} else {
 				e := fmt.Errorf("failed to query user: %w, phone: %s", err, d.MobilePhone)
@@ -212,6 +201,15 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 			if err != nil {
 				z.Error("failed to update user login time", zap.Error(err))
 			}
+		}
+
+		// 初始化用户积分（对已存在积分记录的用户不会重复初始化）
+		err = points_core.InitializeUserPoints(c, tx, user.Id)
+		if err != nil {
+			e := fmt.Errorf("failed to initialize user points: %w, userId: %s", err, user.Id.String())
+			msg = "初始化用户积分失败"
+			status = -1
+			return e
 		}
 
 		// 检查用户状态

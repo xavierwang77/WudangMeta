@@ -2,7 +2,7 @@ package ubanquan
 
 import (
 	"WugongMeta/cmn"
-	"WugongMeta/serve/points"
+	"WugongMeta/cmn/points_core"
 	"WugongMeta/serve/user_mgt"
 	"encoding/json"
 	"errors"
@@ -336,7 +336,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 				}
 
 				// 给用户增加该资产积分
-				err = points.AddUserPointsByAsset(c, tx, userId, metaAsset.Id, 1)
+				err = points_core.AddUserPointsByAsset(c, tx, userId, metaAsset.Id, 1)
 				if err != nil {
 					e := fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), metaAsset.Id)
 					status = -1

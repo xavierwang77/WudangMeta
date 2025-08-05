@@ -12,7 +12,7 @@ import (
 )
 
 type Handler interface {
-	HandleQueryMyAssets(c *gin.Context)
+	HandleQueryMyAsset(c *gin.Context)
 }
 
 type handler struct {
@@ -22,8 +22,8 @@ func NewHandler() Handler {
 	return &handler{}
 }
 
-// HandleQueryMyAssets 处理查询我的资产
-func (h *handler) HandleQueryMyAssets(c *gin.Context) {
+// HandleQueryMyAsset 处理查询我的资产
+func (h *handler) HandleQueryMyAsset(c *gin.Context) {
 	// 获取当前用户ID
 	userId, ok := user_mgt.GetCurrentUserID(c)
 	if !ok {
@@ -59,7 +59,7 @@ func (h *handler) HandleQueryMyAssets(c *gin.Context) {
 	offset := (pageInt - 1) * pageSizeInt
 
 	// 查询用户资产总数
-	var totalCount int64
+	var totalCount int64 = 0
 	err = cmn.GormDB.Model(&cmn.VUserAssetMeta{}).Where("user_id = ?", userId).Count(&totalCount).Error
 	if err != nil {
 		z.Error("failed to count user assets", zap.Error(err), zap.String("user_id", userId.String()))
@@ -99,7 +99,7 @@ func (h *handler) HandleQueryMyAssets(c *gin.Context) {
 		UpdatedAt     int64  `json:"updatedAt"`
 	}
 
-	var responseAssets []AssetResponse
+	responseAssets := make([]AssetResponse, 0, len(userAssets))
 	for _, asset := range userAssets {
 		responseAssets = append(responseAssets, AssetResponse{
 			MetaAssetId:   asset.MetaAssetId,

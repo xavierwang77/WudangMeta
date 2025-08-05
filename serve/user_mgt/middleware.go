@@ -113,9 +113,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Set("external_open_id", "")
 			c.Set("external_nick_name", "")
 			c.Set("external_avatar", "")
-			z.Debug("user authenticated without external info",
-				zap.String("user_id", user.Id.String()),
-				zap.String("mobile_phone", user.MobilePhone))
 		}
 
 		// 继续处理请求

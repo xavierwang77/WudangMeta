@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"WugongMeta/cmn"
+	"WugongMeta/cmn/points_core"
 	"WugongMeta/cmn/sms"
 	"WugongMeta/router"
 	"WugongMeta/serve/asset"
@@ -53,6 +54,7 @@ var serveCmd = &cobra.Command{
 
 		// 初始化公共模块
 		sms.Init()
+		points_core.Init()
 
 		// 初始化服务模块
 		user_mgt.Init()
