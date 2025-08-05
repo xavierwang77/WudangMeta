@@ -109,56 +109,69 @@ func (h *handler) Authentication(c *gin.Context) {
 		return
 	}
 
-	// 查找或创建用户外部信息记录
-	var userExternal cmn.TUserExternal
-	err = cmn.GormDB.Where("user_id = ? AND platform = ?", userId, assetPlatform).First(&userExternal).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 创建新记录
-			userExternal = cmn.TUserExternal{
-				Platform: assetPlatform,
-				UserId:   userId,
-				OpenId:   ubanquanResp.Data.OpenId,
-				NickName: ubanquanResp.Data.NickName,
-				Avatar:   ubanquanResp.Data.HeadImg,
-			}
-			err = cmn.GormDB.Create(&userExternal).Error
-			if err != nil {
-				z.Error("failed to create user external record", zap.Error(err))
-				c.JSON(http.StatusOK, cmn.ReplyProto{
-					Status: -1,
-					Msg:    "创建用户外部信息失败",
-				})
-				return
+	var (
+		status int
+		msg    string
+	)
+
+	err = cmn.GormDB.Transaction(func(tx *gorm.DB) error {
+		// 查找或创建用户外部信息记录
+		var userExternal cmn.TUserExternal
+		err = tx.Where("user_id = ? AND platform = ?", userId, assetPlatform).First(&userExternal).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// 创建新记录
+				userExternal = cmn.TUserExternal{
+					Platform: assetPlatform,
+					UserId:   userId,
+					OpenId:   ubanquanResp.Data.OpenId,
+					NickName: ubanquanResp.Data.NickName,
+					Avatar:   ubanquanResp.Data.HeadImg,
+				}
+				err = tx.Create(&userExternal).Error
+				if err != nil {
+					e := fmt.Errorf("failed to create user external record: %w", err)
+					z.Error(e.Error())
+					status = -1
+					msg = "创建用户外部信息失败"
+					return e
+				}
+			} else {
+				e := fmt.Errorf("failed to query user external record: %w", err)
+				z.Error(e.Error())
+				status = -1
+				msg = "查询用户外部信息失败"
+				return e
 			}
 		} else {
-			z.Error("failed to query user external record", zap.Error(err))
-			c.JSON(http.StatusOK, cmn.ReplyProto{
-				Status: -1,
-				Msg:    "查询用户外部信息失败",
-			})
-			return
+			// 更新现有记录
+			userExternal.OpenId = ubanquanResp.Data.OpenId
+			userExternal.NickName = ubanquanResp.Data.NickName
+			userExternal.Avatar = ubanquanResp.Data.HeadImg
+			err = tx.Save(&userExternal).Error
+			if err != nil {
+				e := fmt.Errorf("failed to update user external record: %w", err)
+				z.Error(e.Error())
+				status = -1
+				msg = "更新用户外部信息失败"
+				return e
+			}
 		}
-	} else {
-		// 更新现有记录
-		userExternal.OpenId = ubanquanResp.Data.OpenId
-		userExternal.NickName = ubanquanResp.Data.NickName
-		userExternal.Avatar = ubanquanResp.Data.HeadImg
-		err = cmn.GormDB.Save(&userExternal).Error
-		if err != nil {
-			z.Error("failed to update user external record", zap.Error(err))
-			c.JSON(http.StatusOK, cmn.ReplyProto{
-				Status: -1,
-				Msg:    "更新用户外部信息失败",
-			})
-			return
-		}
+		return nil
+	})
+	if err != nil {
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: status,
+			Msg:    msg,
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "success",
 	})
+	return
 }
 
 // UpdateMyAsset 更新我的优版权资产
@@ -261,59 +274,77 @@ func (h *handler) UpdateMyAsset(c *gin.Context) {
 	var addedCount int
 	var skippedCount int
 
-	// 遍历资产数据
-	for _, assetData := range cardResp.Data {
-		for _, nfrInfo := range assetData.NFRInfoList {
-			// 查找匹配的元资产
-			var metaAsset cmn.TMetaAsset
-			err = cmn.GormDB.Where("name = ? AND platform = ?", nfrInfo.ThemeName, assetPlatform).First(&metaAsset).Error
-			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					// 元资产不存在，跳过
+	var (
+		status int
+		msg    string
+	)
+
+	err = cmn.GormDB.Transaction(func(tx *gorm.DB) error {
+		// 遍历资产数据
+		for _, assetData := range cardResp.Data {
+			for _, nfrInfo := range assetData.NFRInfoList {
+				// 查找匹配的元资产
+				var metaAsset cmn.TMetaAsset
+				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, assetPlatform).First(&metaAsset).Error
+				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						// 元资产不存在，跳过
+						skippedCount++
+						continue
+					}
+					e := fmt.Errorf("failed to query meta asset: %w", err)
+					z.Error(e.Error())
+					status = -1
+					msg = "查询元资产失败"
+					return e
+				}
+
+				// 检查用户是否已拥有该资产
+				var existingUserAsset cmn.TUserAsset
+				err = tx.Where("user_id = ? AND meta_asset_id = ? AND external_no = ?",
+					userId, metaAsset.Id, nfrInfo.ProductNo).First(&existingUserAsset).Error
+				if err == nil {
+					// 资产已存在，跳过
 					skippedCount++
 					continue
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					e := fmt.Errorf("failed to query existing user asset: %w", err)
+					z.Error(e.Error())
+					status = -1
+					msg = "查询用户是否已拥有资产失败"
+					return e
 				}
-				z.Error("failed to query meta asset", zap.Error(err), zap.String("theme_name", nfrInfo.ThemeName))
-				continue
-			}
 
-			// 检查用户是否已拥有该资产
-			var existingUserAsset cmn.TUserAsset
-			err = cmn.GormDB.Where("user_id = ? AND meta_asset_id = ? AND external_no = ?",
-				userId, metaAsset.Id, nfrInfo.ProductNo).First(&existingUserAsset).Error
-			if err == nil {
-				// 资产已存在，跳过
-				skippedCount++
-				continue
-			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-				z.Error("failed to query existing user asset", zap.Error(err))
-				continue
-			}
+				// 创建新的用户资产记录
+				userAsset := cmn.TUserAsset{
+					UserId:      userId,
+					MetaAssetId: metaAsset.Id,
+					Name:        nfrInfo.Name,
+					ThemeName:   nfrInfo.ThemeName,
+					ExternalNo:  nfrInfo.ProductNo,
+					CoverImg:    nfrInfo.CoverImg,
+				}
 
-			// 创建新的用户资产记录
-			userAsset := cmn.TUserAsset{
-				UserId:      userId,
-				MetaAssetId: metaAsset.Id,
-				Name:        nfrInfo.Name,
-				ThemeName:   nfrInfo.ThemeName,
-				ExternalNo:  nfrInfo.ProductNo,
-				CoverImg:    nfrInfo.CoverImg,
-			}
+				err = tx.Create(&userAsset).Error
+				if err != nil {
+					e := fmt.Errorf("failed to create user asset: %w, user_id: %s", err, userId.String())
+					z.Error(e.Error())
+					status = -1
+					msg = "创建用户资产失败"
+					return e
+				}
 
-			err = cmn.GormDB.Create(&userAsset).Error
-			if err != nil {
-				z.Error("failed to create user asset", zap.Error(err),
-					zap.String("user_id", userId.String()),
-					zap.String("asset_name", nfrInfo.Name))
-				continue
+				addedCount++
 			}
-
-			z.Info("user asset created successfully",
-				zap.String("user_id", userId.String()),
-				zap.String("asset_name", nfrInfo.Name),
-				zap.String("theme_name", nfrInfo.ThemeName))
-			addedCount++
 		}
+		return nil
+	})
+	if err != nil {
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: status,
+			Msg:    fmt.Sprintf("资产同步失败: %s", msg),
+		})
+		return
 	}
 
 	// 返回处理结果

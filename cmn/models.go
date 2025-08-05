@@ -10,6 +10,8 @@ const (
 	TUserExternalName = "t_user_external" // 用户外部信息表
 	TSmsCodesName     = "t_sms_code"      // 短信验证码表
 
+	TUserPointsName = "t_user_points" // 用户积分表
+
 	TRaffleWinnersName = "t_raffle_winner" // 抽奖获奖者表
 	TRaffleLogName     = "t_raffle_log"    // 抽奖日志表
 
@@ -49,6 +51,8 @@ type TUserExternal struct {
 	OpenId          string    `gorm:"column:open_id;type:text;index"`                  // 第三方平台用户ID
 	NickName        string    `gorm:"column:nick_name;type:text"`                      // 第三方平台用户昵称
 	Avatar          string    `gorm:"column:avatar;type:text"`                         // 第三方平台用户头像
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (TUserExternal) TableName() string {
@@ -62,6 +66,8 @@ type TRaffleWinners struct {
 	PrizeName string    `gorm:"column:prize_name;type:varchar(100);not null;index"` // 奖品名称
 	CreatedAt int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
 	UpdatedAt int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (TRaffleWinners) TableName() string {
@@ -76,6 +82,8 @@ type TRaffleLog struct {
 	Prizes    datatypes.JSON `gorm:"column:prizes;type:jsonb"`                           // 获得奖品
 	CreatedAt int64          `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
 	UpdatedAt int64          `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (TRaffleLog) TableName() string {
@@ -124,6 +132,7 @@ type TUserAsset struct {
 	CreatedAt   int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
 	UpdatedAt   int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
 
+	UserInfo  TUser      `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	MetaAsset TMetaAsset `gorm:"foreignKey:MetaAssetId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
@@ -131,19 +140,33 @@ func (TUserAsset) TableName() string {
 	return TUserAssetName
 }
 
+// TUserPoints 用户积分表
+type TUserPoints struct {
+	Id            int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"` // ID
+	UserId        uuid.UUID `gorm:"column:user_id;type:uuid;not null;unique;index"` // 用户ID
+	DefaultPoints float64   `gorm:"column:default_points;type:float"`               // 默认积分
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+}
+
+func (TUserPoints) TableName() string {
+	return TUserPointsName
+}
+
 // VUserAssetMeta 用户资产视图
 type VUserAssetMeta struct {
-	Id            int64     `gorm:"column:id"`
-	UserId        uuid.UUID `gorm:"column:user_id"`
-	MetaAssetId   int64     `gorm:"column:meta_asset_id"`
-	MetaAssetName string    `gorm:"column:meta_asset_name"`
-	MetaCoverImg  string    `gorm:"column:meta_cover_img"`
-	Name          string    `gorm:"column:name"`
-	ThemeName     string    `gorm:"column:theme_name"`
-	ExternalNo    string    `gorm:"column:external_id"`
-	CoverImg      string    `gorm:"column:cover_img"`
-	CreatedAt     int64     `gorm:"column:created_at"`
-	UpdatedAt     int64     `gorm:"column:updated_at"`
+	Id             int64     `gorm:"column:id"`
+	UserId         uuid.UUID `gorm:"column:user_id"`
+	MetaAssetId    int64     `gorm:"column:meta_asset_id"`
+	MetaAssetName  string    `gorm:"column:meta_asset_name"`
+	MetaAssetValue float64   `gorm:"column:meta_asset_value"`
+	MetaCoverImg   string    `gorm:"column:meta_cover_img"`
+	Name           string    `gorm:"column:name"`
+	ThemeName      string    `gorm:"column:theme_name"`
+	ExternalNo     string    `gorm:"column:external_id"`
+	CoverImg       string    `gorm:"column:cover_img"`
+	CreatedAt      int64     `gorm:"column:created_at"`
+	UpdatedAt      int64     `gorm:"column:updated_at"`
 }
 
 func (VUserAssetMeta) TableName() string {
