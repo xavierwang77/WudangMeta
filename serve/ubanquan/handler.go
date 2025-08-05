@@ -349,9 +349,9 @@ func (h *handler) UpdateMyAsset(c *gin.Context) {
 
 	// 返回处理结果
 	responseData := map[string]interface{}{
-		"added_count":   addedCount,
-		"skipped_count": skippedCount,
-		"total_count":   addedCount + skippedCount,
+		"addedCount":   addedCount,
+		"skippedCount": skippedCount,
+		"totalCount":   addedCount + skippedCount,
 	}
 
 	responseJson, err := json.Marshal(responseData)

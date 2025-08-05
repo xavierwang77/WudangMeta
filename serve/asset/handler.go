@@ -40,7 +40,7 @@ func (h *handler) QueryMyAssets(c *gin.Context) {
 	if page == "" {
 		page = "1"
 	}
-	pageSize := c.Query("page_size")
+	pageSize := c.Query("pageSize")
 	if pageSize == "" {
 		pageSize = "10"
 	}
@@ -88,15 +88,15 @@ func (h *handler) QueryMyAssets(c *gin.Context) {
 
 	// 构建响应数据
 	type AssetResponse struct {
-		MetaAssetId   int64  `json:"meta_asset_id"`
-		MetaAssetName string `json:"meta_asset_name"`
-		MetaCoverImg  string `json:"meta_cover_img"`
+		MetaAssetId   int64  `json:"metaAssetId"`
+		MetaAssetName string `json:"metaAssetName"`
+		MetaCoverImg  string `json:"metaCoverImg"`
 		Name          string `json:"name"`
-		ThemeName     string `json:"theme_name"`
-		ExternalId    string `json:"external_id"`
-		CoverImg      string `json:"cover_img"`
-		CreatedAt     int64  `json:"created_at"`
-		UpdatedAt     int64  `json:"updated_at"`
+		ThemeName     string `json:"themeName"`
+		ExternalId    string `json:"externalId"`
+		CoverImg      string `json:"coverImg"`
+		CreatedAt     int64  `json:"createdAt"`
+		UpdatedAt     int64  `json:"updatedAt"`
 	}
 
 	var responseAssets []AssetResponse

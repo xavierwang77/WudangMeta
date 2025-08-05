@@ -32,7 +32,7 @@ func NewHandler() Handler {
 
 // SendSMSCode 发送SMS验证码
 func (h *handler) SendSMSCode(c *gin.Context) {
-	phone := c.Query("mobile_phone")
+	phone := c.Query("mobilePhone")
 	if phone == "" {
 		z.Error("phone number is empty")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
@@ -99,7 +99,7 @@ func (h *handler) SMSLogin(c *gin.Context) {
 	}
 
 	type data struct {
-		MobilePhone string `json:"mobile_phone"`
+		MobilePhone string `json:"mobilePhone"`
 		Code        string `json:"code"`
 	}
 
@@ -265,7 +265,7 @@ func (h *handler) SMSLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "登录成功",
-		Data:   []byte(`{"user_id":"` + user.Id.String() + `","mobile_phone":"` + user.MobilePhone + `","nick_name":"` + user.NickName + `"}`),
+		Data:   []byte(`{"userId":"` + user.Id.String() + `","mobilePhone":"` + user.MobilePhone + `","nickName":"` + user.NickName + `"}`),
 	})
 	return
 }
