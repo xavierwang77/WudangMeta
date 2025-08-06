@@ -17,7 +17,7 @@ type ReqProto struct {
 	PageSize int64 `json:"pageSize,omitempty"`
 
 	Data   json.RawMessage `json:"data,omitempty"`
-	Filter interface{}     `json:"filter,omitempty"`
+	Filter json.RawMessage `json:"filter,omitempty"`
 }
 
 type ReplyProto struct {

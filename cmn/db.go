@@ -118,12 +118,16 @@ func initTable(db *gorm.DB) error {
 
 // 初始化视图
 func initView(db *gorm.DB) error {
+	// 创建 v_user_asset_meta 视图
 	// 构造一个子查询，把两张表连接并选出所有需要的列
 	q := db.
 		Table("t_user_asset AS ua").
 		Select(`
         ua.id,
         ua.user_id,
+		u.mobile_phone,
+		u.email,
+		u.nick_name,
         ua.meta_asset_id,
         ma.name   AS meta_asset_name,
 		ma.value AS meta_asset_value,
@@ -135,7 +139,8 @@ func initView(db *gorm.DB) error {
         ua.created_at,
         ua.updated_at
     `).
-		Joins("LEFT JOIN t_meta_asset AS ma ON ua.meta_asset_id = ma.id")
+		Joins("LEFT JOIN t_meta_asset AS ma ON ua.meta_asset_id = ma.id").
+		Joins("LEFT JOIN t_user AS u ON ua.user_id = u.id")
 
 	// 创建视图
 	err := db.Migrator().CreateView(

@@ -157,6 +157,9 @@ func (TUserPoints) TableName() string {
 type VUserAssetMeta struct {
 	Id             int64     `gorm:"column:id"`
 	UserId         uuid.UUID `gorm:"column:user_id"`
+	MobilePhone    string    `gorm:"column:mobile_phone"`
+	Email          string    `gorm:"column:email"`
+	NickName       string    `gorm:"column:nick_name"`
 	MetaAssetId    int64     `gorm:"column:meta_asset_id"`
 	MetaAssetName  string    `gorm:"column:meta_asset_name"`
 	MetaAssetValue float64   `gorm:"column:meta_asset_value"`
