@@ -36,7 +36,7 @@ func InitRoutes(r *gin.Engine) {
 			authApi.GET("/points/me", pointsHandler.HandleQueryMyPoints)                  // 获取我的积分
 			authApi.GET("/asset/me", assetHandler.HandleQueryMyAsset)                     // 查询我的资产
 			authApi.POST("/ranking/list", rankingHandler.HandleQueryRankingList)          // 查询排行榜列表
-			authApi.POST("/task/luck-tendency", taskHandler.HandleAnalyzeMyLuckTendency)  // 分析我的运势
+			authApi.POST("/task/fortune", taskHandler.HandleAnalyzeMyFortune)             // 分析我的运势
 		}
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 type Handler interface {
-	HandleAnalyzeMyLuckTendency(c *gin.Context)
+	HandleAnalyzeMyFortune(c *gin.Context)
 }
 
 type handler struct {
@@ -21,8 +21,8 @@ func NewHandler() Handler {
 	return &handler{}
 }
 
-// HandleAnalyzeMyLuckTendency 处理分析我的运势请求
-func (h *handler) HandleAnalyzeMyLuckTendency(c *gin.Context) {
+// HandleAnalyzeMyFortune 处理分析我的运势请求
+func (h *handler) HandleAnalyzeMyFortune(c *gin.Context) {
 	userId, ok := user_mgt.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current userId from context")
