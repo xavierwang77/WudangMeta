@@ -13,9 +13,7 @@ import (
 // 仅为不存在积分记录的用户创建初始积分，不会更新已存在的记录
 func InitializeUserPoints(ctx context.Context, db *gorm.DB, userId uuid.UUID) error {
 	if db == nil {
-		e := fmt.Errorf("database connection is nil")
-		z.Error(e.Error())
-		return e
+		db = cmn.GormDB
 	}
 	if userId == uuid.Nil {
 		e := fmt.Errorf("userId is nil")
@@ -80,9 +78,7 @@ func InitializeUserPoints(ctx context.Context, db *gorm.DB, userId uuid.UUID) er
 // 查询元资产价值，计算积分并累加到用户现有积分上
 func AddUserPointsByAsset(ctx context.Context, db *gorm.DB, userId uuid.UUID, metaAssetId int64, assetCount int64) error {
 	if db == nil {
-		e := fmt.Errorf("database connection is nil")
-		z.Error(e.Error())
-		return e
+		db = cmn.GormDB
 	}
 	if userId == uuid.Nil {
 		e := fmt.Errorf("userId is nil")
@@ -135,13 +131,50 @@ func AddUserPointsByAsset(ctx context.Context, db *gorm.DB, userId uuid.UUID, me
 	return nil
 }
 
+// AddUserPoints 增加用户积分
+func AddUserPoints(ctx context.Context, db *gorm.DB, userId uuid.UUID, points float64) error {
+	if db == nil {
+		db = cmn.GormDB
+	}
+	if userId == uuid.Nil {
+		e := fmt.Errorf("userId is nil")
+		z.Error(e.Error())
+		return e
+	}
+	if points <= 0 {
+		e := fmt.Errorf("points must be positive")
+		z.Error(e.Error())
+		return e
+	}
+
+	// 查询用户现有积分记录
+	var userPoints cmn.TUserPoints
+	err := db.Where("user_id = ?", userId).First(&userPoints).Error
+	if err != nil {
+		e := fmt.Errorf("failed to query user points: %w, userId: %s", err, userId.String())
+		z.Error(e.Error())
+		return e
+	}
+
+	// 累加积分到原有积分上
+	newTotalPoints := userPoints.DefaultPoints + points
+
+	// 更新积分记录
+	err = db.Model(&userPoints).Update("default_points", newTotalPoints).Error
+	if err != nil {
+		e := fmt.Errorf("failed to update user points: %w, userId: %s", err, userId.String())
+		z.Error(e.Error())
+		return e
+	}
+
+	return nil
+}
+
 // AddAllUserPointsFromAssets 根据资产计算并累加到已存在的用户积分
 // 自动遍历积分表中的所有用户，计算其资产总价值并累加到现有积分上
 func AddAllUserPointsFromAssets(ctx context.Context, db *gorm.DB) []error {
 	if db == nil {
-		e := fmt.Errorf("database connection is nil")
-		z.Error(e.Error())
-		return []error{e}
+		db = cmn.GormDB
 	}
 
 	// 查询所有已存在积分记录的用户
@@ -177,9 +210,7 @@ func AddAllUserPointsFromAssets(ctx context.Context, db *gorm.DB) []error {
 // 计算用户资产总价值并累加到现有积分上
 func addSingleUserPointsFromAssets(ctx context.Context, db *gorm.DB, userId uuid.UUID) error {
 	if db == nil {
-		e := fmt.Errorf("database connection is nil")
-		z.Error(e.Error())
-		return e
+		db = cmn.GormDB
 	}
 	if userId == uuid.Nil {
 		e := fmt.Errorf("userId is nil")
@@ -230,12 +261,6 @@ func addSingleUserPointsFromAssets(ctx context.Context, db *gorm.DB, userId uuid
 		z.Error(e.Error())
 		return e
 	}
-
-	z.Debug("user points updated",
-		zap.String("user_id", userId.String()),
-		zap.Float64("original_points", userPoints.DefaultPoints),
-		zap.Float64("asset_points", assetPoints),
-		zap.Float64("new_total_points", newTotalPoints))
 
 	return nil
 }

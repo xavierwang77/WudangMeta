@@ -21,6 +21,8 @@ const (
 	TRankingListConfigName = "t_cfg_ranking_list" // 客户端排行榜配置表
 	TCommonConfigName      = "t_cfg_common"       // 通用配置表
 
+	TUserFortuneName = "t_user_fortune" // 用户运势表
+
 	VUserAssetMetaName = "v_user_asset_meta" // 用户资产视图
 )
 
@@ -142,15 +144,34 @@ func (TUserAsset) TableName() string {
 
 // TUserPoints 用户积分表
 type TUserPoints struct {
-	Id            int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"` // ID
-	UserId        uuid.UUID `gorm:"column:user_id;type:uuid;not null;unique;index"` // 用户ID
-	DefaultPoints float64   `gorm:"column:default_points;type:float"`               // 默认积分
+	Id            int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // ID
+	UserId        uuid.UUID `gorm:"column:user_id;type:uuid;not null;unique;index"`     // 用户ID
+	DefaultPoints float64   `gorm:"column:default_points;type:float"`                   // 默认积分
+	CreatedAt     int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt     int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
 
 	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 func (TUserPoints) TableName() string {
 	return TUserPointsName
+}
+
+// TUserFortune 用户运势表
+type TUserFortune struct {
+	UserId    uuid.UUID      `gorm:"column:user_id;type:uuid;primaryKey;not null;index"` // 用户ID
+	Name      string         `gorm:"column:name;type:varchar(50)"`                       // 用户姓名
+	Gender    string         `gorm:"column:gender;type:varchar(50)"`                     // 用户性别
+	Birth     string         `gorm:"column:birth;type:varchar(50)"`                      // 用户生日
+	Data      datatypes.JSON `gorm:"column:data;type:jsonb"`                             // 运势数据
+	CreatedAt int64          `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt int64          `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+}
+
+func (TUserFortune) TableName() string {
+	return TUserFortuneName
 }
 
 // VUserAssetMeta 用户资产视图

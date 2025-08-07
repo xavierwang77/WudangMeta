@@ -22,11 +22,11 @@ func Init() {
 
 	appId = viper.GetString("ubanquan.appId")
 	if appId == "" {
-		z.Fatal("ubanquan.appId is empty")
+		z.Fatal("[ FAIL ] ubanquan.appId is empty")
 	}
 	appSecret = viper.GetString("ubanquan.appSecret")
 	if appSecret == "" {
-		z.Fatal("ubanquan.appSecret is empty")
+		z.Fatal("[ FAIL ] ubanquan.appSecret is empty")
 	}
 
 	cmn.MiniLogger.Info("[ OK ] ubanquan module initialized")

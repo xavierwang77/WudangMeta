@@ -25,7 +25,7 @@ func Init() {
 
 	err := initSessionStore()
 	if err != nil {
-		z.Fatal("failed to initialize session store", zap.Error(err))
+		z.Fatal("[ FAIL ] failed to initialize session store", zap.Error(err))
 	}
 
 	cmn.MiniLogger.Info("[ OK ] user_mgt module initialized")

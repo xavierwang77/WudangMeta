@@ -4,6 +4,7 @@ import (
 	"WugongMeta/serve/asset"
 	"WugongMeta/serve/points"
 	"WugongMeta/serve/ranking"
+	"WugongMeta/serve/task"
 	"WugongMeta/serve/ubanquan"
 	"WugongMeta/serve/user_mgt"
 
@@ -18,6 +19,7 @@ func InitRoutes(r *gin.Engine) {
 	pointsHandler := points.NewHandler()
 	assetHandler := asset.NewHandler()
 	rankingHandler := ranking.NewHandler()
+	taskHandler := task.NewHandler()
 
 	// 路由组 /api
 	api := r.Group("/api")
@@ -34,6 +36,7 @@ func InitRoutes(r *gin.Engine) {
 			authApi.GET("/points/me", pointsHandler.HandleQueryMyPoints)                  // 获取我的积分
 			authApi.GET("/asset/me", assetHandler.HandleQueryMyAsset)                     // 查询我的资产
 			authApi.POST("/ranking/list", rankingHandler.HandleQueryRankingList)          // 查询排行榜列表
+			authApi.POST("/task/luck-tendency", taskHandler.HandleAnalyzeMyLuckTendency)  // 分析我的运势
 		}
 	}
 }

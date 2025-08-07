@@ -5,12 +5,14 @@ package cmd
 
 import (
 	"WugongMeta/cmn"
+	"WugongMeta/cmn/llm"
 	"WugongMeta/cmn/points_core"
 	"WugongMeta/cmn/sms"
 	"WugongMeta/router"
 	"WugongMeta/serve/asset"
 	"WugongMeta/serve/points"
 	"WugongMeta/serve/ranking"
+	"WugongMeta/serve/task"
 	"WugongMeta/serve/ubanquan"
 	"WugongMeta/serve/user_mgt"
 	"fmt"
@@ -56,6 +58,7 @@ var serveCmd = &cobra.Command{
 		// 初始化公共模块
 		sms.Init()
 		points_core.Init()
+		llm.Init()
 
 		// 初始化服务模块
 		user_mgt.Init()
@@ -63,6 +66,7 @@ var serveCmd = &cobra.Command{
 		ubanquan.Init()
 		points.Init()
 		ranking.Init()
+		task.Init()
 
 		cmn.MiniLogger.Info("[ YES ] all modules initialed", zap.String("version", cmn.Version))
 
