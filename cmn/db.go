@@ -107,7 +107,8 @@ func initTable(db *gorm.DB) error {
 		&TRaffleLog{},
 		&TMetaAsset{},
 		&TUserAsset{},
-		&TUserFortune{})
+		&TUserFortune{},
+		&TUserCheckIn{})
 	if err != nil {
 		logger.Error("auto migrate failed: " + err.Error())
 		return err

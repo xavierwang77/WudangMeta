@@ -21,7 +21,8 @@ const (
 	TRankingListConfigName = "t_cfg_ranking_list" // 客户端排行榜配置表
 	TCommonConfigName      = "t_cfg_common"       // 通用配置表
 
-	TUserFortuneName = "t_user_fortune" // 用户运势表
+	TUserFortuneName = "t_user_fortune"  // 用户运势表
+	TUserCheckInName = "t_user_check_in" // 用户签到表
 
 	VUserAssetMetaName = "v_user_asset_meta" // 用户资产视图
 )
@@ -172,6 +173,20 @@ type TUserFortune struct {
 
 func (TUserFortune) TableName() string {
 	return TUserFortuneName
+}
+
+// TUserCheckIn 用户签到表
+type TUserCheckIn struct {
+	Id        int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // ID
+	UserId    uuid.UUID `gorm:"column:user_id;type:uuid;not null;index"`            // 用户ID
+	Points    float64   `gorm:"column:points;type:double precision;default:0"`      // 签到获得积分
+	CreatedAt int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+
+	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+}
+
+func (TUserCheckIn) TableName() string {
+	return TUserCheckInName
 }
 
 // VUserAssetMeta 用户资产视图
