@@ -104,7 +104,7 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
-			Status: 1,
+			Status: 401,
 			Msg:    "未登录或登录已过期",
 		})
 		return
@@ -183,7 +183,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
-			Status: 1,
+			Status: 401,
 			Msg:    "未登录或登录已过期",
 		})
 		return

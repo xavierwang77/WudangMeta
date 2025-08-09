@@ -31,7 +31,7 @@ func (h *handler) HandleAnalyzeMyFortune(c *gin.Context) {
 	if !ok {
 		z.Error("failed to get current userId from context")
 		c.JSON(http.StatusOK, gin.H{
-			"status": 1,
+			"status": 401,
 			"msg":    "未登录或登录已过期",
 		})
 		return
@@ -114,7 +114,7 @@ func (h *handler) HandleDailyCheckIn(c *gin.Context) {
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
-			Status: 1,
+			Status: 401,
 			Msg:    "未登录或登录已过期",
 		})
 		return
