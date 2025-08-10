@@ -2,12 +2,13 @@ package cmn
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-	"time"
 )
 
 var (
@@ -151,6 +152,38 @@ func initView(db *gorm.DB) error {
 	)
 	if err != nil {
 		logger.Error("create v_user_asset_meta failed: " + err.Error())
+		return err
+	}
+
+	// 创建 v_user_info 视图
+	// 构造查询，连接用户表、用户外部信息表和用户积分表
+	userInfoQuery := db.
+		Table("t_user AS u").
+		Select(`
+        u.id,
+        u.official_name,
+        u.nick_name,
+        u.email,
+        u.mobile_phone,
+        u.login_time,
+        u.created_at,
+        u.updated_at,
+        u.status,
+        ue.platform AS external_platform,
+        ue.nick_name AS external_nick_name,
+        ue.avatar AS external_avatar,
+        COALESCE(up.default_points, 0) AS default_points
+    `).
+		Joins("LEFT JOIN t_user_external AS ue ON u.id = ue.user_id").
+		Joins("LEFT JOIN t_user_points AS up ON u.id = up.user_id")
+
+	// 创建 v_user_info 视图
+	err = db.Migrator().CreateView(
+		VUserInfo{}.TableName(),
+		gorm.ViewOption{Query: userInfoQuery},
+	)
+	if err != nil {
+		logger.Error("create v_user_info failed: " + err.Error())
 		return err
 	}
 

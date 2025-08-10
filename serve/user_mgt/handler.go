@@ -7,17 +7,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"net/http"
-	"time"
 )
 
 type Handler interface {
 	HandleSendSMSCode(c *gin.Context)
 	HandleSMSLogin(c *gin.Context)
+	HandleGetCurrentUserInfo(c *gin.Context)
 }
 
 type handler struct {
@@ -261,6 +263,58 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "登录成功",
+	})
+	return
+}
+
+// HandleGetCurrentUserInfo 处理获取当前用户信息请求
+func (h *handler) HandleGetCurrentUserInfo(c *gin.Context) {
+	// 获取当前用户ID
+	userID, exists := GetCurrentUserID(c)
+	if !exists {
+		z.Error("failed to get current user ID from context")
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: 401,
+			Msg:    "用户未登录或登录已过期",
+		})
+		return
+	}
+
+	// 从 VUserInfo 视图查询用户完整信息
+	var userInfo cmn.VUserInfo
+	err := cmn.GormDB.Where("id = ?", userID).First(&userInfo).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			z.Error("user not found in VUserInfo", zap.String("userID", userID.String()))
+			c.JSON(http.StatusOK, cmn.ReplyProto{
+				Status: 1,
+				Msg:    "用户信息不存在",
+			})
+			return
+		}
+		z.Error("failed to query user info from VUserInfo", zap.Error(err), zap.String("userID", userID.String()))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户信息失败",
+		})
+		return
+	}
+
+	// 将用户信息序列化为JSON并返回
+	userInfoJSON, err := json.Marshal(userInfo)
+	if err != nil {
+		z.Error("failed to marshal user info", zap.Error(err), zap.String("userID", userID.String()))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "序列化用户信息失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "获取用户信息成功",
+		Data:   userInfoJSON,
 	})
 	return
 }

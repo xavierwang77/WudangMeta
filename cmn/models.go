@@ -25,6 +25,7 @@ const (
 	TUserCheckInName = "t_user_check_in" // 用户签到表
 
 	VUserAssetMetaName = "v_user_asset_meta" // 用户资产视图
+	VUserInfoName      = "v_user_info"       // 用户信息视图
 )
 
 // TUser 用户信息表
@@ -44,6 +45,7 @@ func (TUser) TableName() string {
 	return TUserName
 }
 
+// TUserExternal 用户外部信息表
 type TUserExternal struct {
 	Id              int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`  // ID
 	UserId          uuid.UUID `gorm:"column:user_id;type:uuid;not null;index"`         // 用户ID
@@ -191,23 +193,44 @@ func (TUserCheckIn) TableName() string {
 
 // VUserAssetMeta 用户资产视图
 type VUserAssetMeta struct {
-	Id             int64     `gorm:"column:id"`
-	UserId         uuid.UUID `gorm:"column:user_id"`
-	MobilePhone    string    `gorm:"column:mobile_phone"`
-	Email          string    `gorm:"column:email"`
-	NickName       string    `gorm:"column:nick_name"`
-	MetaAssetId    int64     `gorm:"column:meta_asset_id"`
-	MetaAssetName  string    `gorm:"column:meta_asset_name"`
-	MetaAssetValue float64   `gorm:"column:meta_asset_value"`
-	MetaCoverImg   string    `gorm:"column:meta_cover_img"`
-	Name           string    `gorm:"column:name"`
-	ThemeName      string    `gorm:"column:theme_name"`
-	ExternalNo     string    `gorm:"column:external_id"`
-	CoverImg       string    `gorm:"column:cover_img"`
-	CreatedAt      int64     `gorm:"column:created_at"`
-	UpdatedAt      int64     `gorm:"column:updated_at"`
+	Id             int64     `json:"id" gorm:"column:id"`
+	UserId         uuid.UUID `json:"userId" gorm:"column:user_id"`
+	MobilePhone    string    `json:"mobilePhone" gorm:"column:mobile_phone"`
+	Email          string    `json:"email" gorm:"column:email"`
+	NickName       string    `json:"nickName" gorm:"column:nick_name"`
+	MetaAssetId    int64     `json:"metaAssetId" gorm:"column:meta_asset_id"`
+	MetaAssetName  string    `json:"metaAssetName" gorm:"column:meta_asset_name"`
+	MetaAssetValue float64   `json:"metaAssetValue" gorm:"column:meta_asset_value"`
+	MetaCoverImg   string    `json:"metaCoverImg" gorm:"column:meta_cover_img"`
+	Name           string    `json:"name" gorm:"column:name"`
+	ThemeName      string    `json:"themeName" gorm:"column:theme_name"`
+	ExternalNo     string    `json:"externalNo" gorm:"column:external_id"`
+	CoverImg       string    `json:"coverImg" gorm:"column:cover_img"`
+	CreatedAt      int64     `json:"createdAt" gorm:"column:created_at"`
+	UpdatedAt      int64     `json:"updatedAt" gorm:"column:updated_at"`
 }
 
 func (VUserAssetMeta) TableName() string {
 	return VUserAssetMetaName
+}
+
+// VUserInfo 用户信息视图
+type VUserInfo struct {
+	Id               uuid.UUID `json:"id" gorm:"column:id;type:uuid;primaryKey;not null;unique;index"`                   // 用户ID
+	OfficialName     string    `json:"officialName" gorm:"column:official_name;type:varchar(50)"`                        // 真实姓名
+	NickName         string    `json:"nickName" gorm:"column:nick_name;type:varchar(50)"`                                // 昵称
+	Email            string    `json:"email" gorm:"column:email;type:varchar(30)"`                                       // 邮箱
+	MobilePhone      string    `json:"mobilePhone" gorm:"column:mobile_phone;type:varchar(11);uniqueIndex"`              // 手机号
+	LoginTime        int64     `json:"loginTime" gorm:"column:login_time;type:bigint"`                                   // 最近登录时间
+	CreatedAt        int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"`              // 创建时间
+	UpdatedAt        int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"`              // 更新时间
+	Status           string    `json:"status" gorm:"column:status;type:varchar(2);default:'00';index"`                   // 用户状态 00:启用 01:禁用
+	ExternalPlatform string    `json:"externalPlatform" gorm:"column:external_platform;type:varchar(30);not null;index"` // 第三方平台标识
+	ExternalNickName string    `json:"externalNickName" gorm:"column:external_nick_name;type:text"`                      // 第三方平台用户昵称
+	ExternalAvatar   string    `json:"externalAvatar" gorm:"column:external_avatar;type:text"`                           // 第三方平台用户头像
+	DefaultPoints    float64   `json:"defaultPoints" gorm:"column:default_points;type:float"`                            // 默认积分
+}
+
+func (VUserInfo) TableName() string {
+	return VUserInfoName
 }

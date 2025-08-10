@@ -38,6 +38,7 @@ func InitRoutes(r *gin.Engine) {
 			authApi.POST("/ranking/list", rankingHandler.HandleQueryRankingList)          // 查询排行榜列表
 			authApi.POST("/task/fortune", taskHandler.HandleAnalyzeMyFortune)             // 分析我的运势
 			authApi.PATCH("/task/check-in", taskHandler.HandleDailyCheckIn)               // 每日签到
+			authApi.GET("/user/info/me", userMgtHandler.HandleGetCurrentUserInfo)         // 获取当前用户信息
 		}
 	}
 }
