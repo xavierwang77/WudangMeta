@@ -1,0 +1,49 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 登录阿里云镜像服务 ACR
+      - name: Login to Aliyun ACR
+        run: echo "${{ secrets.ALIYUN_ACR_PASSWORD }}" | docker login crpi-xgvixuksrbwcmtex.cn-guangzhou.personal.cr.aliyuncs.com -u ${{ secrets.ALIYUN_ACR_USERNAME }} --password-stdin
+
+      # 获取版本号
+      - name: Get Version and Symbol from Tag
+        run: |
+          # 提取完整 tag，示例值：v1.0.0_symbol
+          FULL_TAG="${GITHUB_REF#refs/tags/}"
+
+          # 提取版本号（即第一个 '_' 之前的部分）：v1.0.0
+          VERSION="${FULL_TAG%%_*}"
+
+          # 提取 symbol（即第一个 '_' 之后的部分）：symbol
+          SYMBOL="${FULL_TAG#*_}"
+
+          echo "FULL_TAG=$FULL_TAG" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "SYMBOL=$SYMBOL" >> $GITHUB_ENV
+
+      # 构建并推送镜像
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_BASE=crpi-xgvixuksrbwcmtex.cn-guangzhou.personal.cr.aliyuncs.com/xavierwang/wudang-meta_be
+
+          echo "==> 构建镜像: $IMAGE_BASE"
+          docker build --build-arg VERSION=$VERSION -t $IMAGE_BASE:$FULL_TAG .
+          
+          # 额外打一个固定 tag（供 Watchtower 使用）
+          docker tag $IMAGE_BASE:$FULL_TAG $IMAGE_BASE:$SYMBOL
+
+          echo "==> 推送镜像到 ACR"
+          docker push $IMAGE_BASE:$FULL_TAG
+          docker push $IMAGE_BASE:$SYMBOL
