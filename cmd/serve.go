@@ -4,18 +4,19 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"WugongMeta/cmn"
-	"WugongMeta/cmn/llm"
-	"WugongMeta/cmn/points_core"
-	"WugongMeta/cmn/sms"
-	"WugongMeta/router"
-	"WugongMeta/serve/asset"
-	"WugongMeta/serve/points"
-	"WugongMeta/serve/ranking"
-	"WugongMeta/serve/task"
-	"WugongMeta/serve/ubanquan"
-	"WugongMeta/serve/user_mgt"
+	"WudangMeta/cmn"
+	"WudangMeta/cmn/llm"
+	"WudangMeta/cmn/points_core"
+	"WudangMeta/cmn/sms"
+	"WudangMeta/router"
+	"WudangMeta/serve/asset"
+	"WudangMeta/serve/points"
+	"WudangMeta/serve/ranking"
+	"WudangMeta/serve/task"
+	"WudangMeta/serve/ubanquan"
+	"WudangMeta/serve/user_mgt"
 	"fmt"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 

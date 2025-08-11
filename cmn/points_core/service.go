@@ -1,9 +1,10 @@
 package points_core
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

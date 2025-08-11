@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"WugongMeta/cmn"
-	"WugongMeta/serve/user_mgt"
+	"WudangMeta/cmn"
+	"WudangMeta/serve/user_mgt"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

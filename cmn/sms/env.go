@@ -1,7 +1,8 @@
 package sms
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
+
 	"github.com/spf13/viper"
 	v20210111 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
 	"go.uber.org/zap"

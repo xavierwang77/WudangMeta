@@ -1,7 +1,8 @@
 package ubanquan
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

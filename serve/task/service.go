@@ -1,16 +1,17 @@
 package task
 
 import (
-	"WugongMeta/cmn"
-	"WugongMeta/cmn/llm"
-	"WugongMeta/cmn/points_core"
+	"WudangMeta/cmn"
+	"WudangMeta/cmn/llm"
+	"WudangMeta/cmn/points_core"
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"time"
 )
 
 // QueryExistFortuneUserData 查询已存在的运势用户数据

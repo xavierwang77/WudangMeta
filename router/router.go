@@ -1,12 +1,12 @@
 package router
 
 import (
-	"WugongMeta/serve/asset"
-	"WugongMeta/serve/points"
-	"WugongMeta/serve/ranking"
-	"WugongMeta/serve/task"
-	"WugongMeta/serve/ubanquan"
-	"WugongMeta/serve/user_mgt"
+	"WudangMeta/serve/asset"
+	"WudangMeta/serve/points"
+	"WudangMeta/serve/ranking"
+	"WudangMeta/serve/task"
+	"WudangMeta/serve/ubanquan"
+	"WudangMeta/serve/user_mgt"
 
 	"github.com/gin-gonic/gin"
 )

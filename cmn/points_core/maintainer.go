@@ -1,11 +1,12 @@
 package points_core
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
 	"context"
+	"time"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"time"
 )
 
 func userAssetPointsMaintainer(ctx context.Context, db *gorm.DB) {

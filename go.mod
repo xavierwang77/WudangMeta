@@ -1,4 +1,4 @@
-module WugongMeta
+module WudangMeta
 
 go 1.24
 

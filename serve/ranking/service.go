@@ -1,9 +1,10 @@
 package ranking
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

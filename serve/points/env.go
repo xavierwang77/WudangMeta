@@ -1,7 +1,8 @@
 package points
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
+
 	"go.uber.org/zap"
 )
 

@@ -1,7 +1,8 @@
 package ranking
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
+
 	"go.uber.org/zap"
 )
 

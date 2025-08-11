@@ -1,14 +1,15 @@
 package points
 
 import (
-	"WugongMeta/cmn"
-	"WugongMeta/serve/user_mgt"
+	"WudangMeta/cmn"
+	"WudangMeta/serve/user_mgt"
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 type Handler interface {

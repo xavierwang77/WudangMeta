@@ -1,7 +1,8 @@
 package asset
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
+
 	"go.uber.org/zap"
 )
 

@@ -1,11 +1,12 @@
 package ranking
 
 import (
-	"WugongMeta/cmn"
+	"WudangMeta/cmn"
 	"encoding/json"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 type Handler interface {

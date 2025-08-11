@@ -1,9 +1,9 @@
 package ubanquan
 
 import (
-	"WugongMeta/cmn"
-	"WugongMeta/cmn/points_core"
-	"WugongMeta/serve/user_mgt"
+	"WudangMeta/cmn"
+	"WudangMeta/cmn/points_core"
+	"WudangMeta/serve/user_mgt"
 	"encoding/json"
 	"errors"
 	"fmt"

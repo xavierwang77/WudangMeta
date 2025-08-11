@@ -1,9 +1,9 @@
 package user_mgt
 
 import (
-	"WugongMeta/cmn"
-	"WugongMeta/cmn/points_core"
-	"WugongMeta/cmn/sms"
+	"WudangMeta/cmn"
+	"WudangMeta/cmn/points_core"
+	"WudangMeta/cmn/sms"
 	"encoding/json"
 	"errors"
 	"fmt"
