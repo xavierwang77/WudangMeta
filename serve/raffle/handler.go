@@ -20,6 +20,7 @@ type Handler interface {
 	HandleQueryPrizes(c *gin.Context)
 	HandleUpdatePrize(c *gin.Context)
 	HandleCreatePrize(c *gin.Context)
+	HandleUpdateConsumePoints(c *gin.Context)
 }
 
 type handler struct {
@@ -548,7 +549,7 @@ func (h *handler) HandleQueryMyWinnings(c *gin.Context) {
 	}
 
 	// 分页查询数据
-	if err := cmn.GormDB.Model(&cmn.TRaffleWinners{}).
+	if err = cmn.GormDB.Model(&cmn.TRaffleWinners{}).
 		Where("user_id = ?", userId).
 		Order("created_at DESC").
 		Offset(offset).
@@ -578,5 +579,79 @@ func (h *handler) HandleQueryMyWinnings(c *gin.Context) {
 		Msg:      "success",
 		Data:     winningsJSON,
 		RowCount: total,
+	})
+}
+
+// HandleUpdateConsumePoints 更新抽奖消耗积分配置
+func (h *handler) HandleUpdateConsumePoints(c *gin.Context) {
+	// 解析请求体
+	var req cmn.ReqProto
+	if err := c.ShouldBind(&req); err != nil {
+		z.Error("failed to bind request", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体格式错误",
+		})
+		return
+	}
+
+	var updateData struct {
+		ConsumePointsKey   string `json:"consumePointsKey"`
+		ConsumePointsValue int64  `json:"consumePointsValue"`
+	}
+	if err := json.Unmarshal(req.Data, &updateData); err != nil {
+		z.Error("failed to unmarshal request data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体data字段格式错误",
+		})
+		return
+	}
+
+	// 验证参数
+	if updateData.ConsumePointsValue < 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "消耗积分不能为负数",
+		})
+		return
+	}
+
+	// 更新数据库配置表中的消耗积分值
+	consumePointsValueStr := strconv.FormatInt(updateData.ConsumePointsValue, 10)
+	if err := cmn.GormDB.Model(&cmn.TCfgCommon{}).Where("key = ?", cfgKeyConsumePointsValue).Update("value", consumePointsValueStr).Error; err != nil {
+		z.Error("failed to update consume points value in config table", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "更新消耗积分值配置失败",
+		})
+		return
+	}
+
+	// 只在 ConsumePointsKey 不为空时更新配置表中的消耗积分键
+	if updateData.ConsumePointsKey != "" {
+		if err := cmn.GormDB.Model(&cmn.TCfgCommon{}).Where("key = ?", cfgKeyConsumePointsKey).Update("value", updateData.ConsumePointsKey).Error; err != nil {
+			z.Error("failed to update consume points key in config table", zap.Error(err))
+			c.JSON(http.StatusOK, gin.H{
+				"status": -1,
+				"msg":    "更新消耗积分键配置失败",
+			})
+			return
+		}
+	}
+
+	// 调用machine的resetConsumePoints方法重置抽奖机消耗积分
+	if err := machine.resetConsumePoints(updateData.ConsumePointsKey, updateData.ConsumePointsValue); err != nil {
+		z.Error("failed to reset consume points", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "重置抽奖机消耗积分失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "抽奖消耗积分配置更新成功",
 	})
 }

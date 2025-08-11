@@ -1,10 +1,13 @@
 package cmn
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // RandDigits 生成指定位数的随机数字字符串
@@ -67,4 +70,25 @@ func InitDir(dir string) error {
 	}
 
 	return nil
+}
+
+// GetConfigFromDB 从配置表读取配置值，如果不存在则创建默认值
+func GetConfigFromDB(key, defaultValue string) (string, error) {
+	var config TCfgCommon
+	err := GormDB.Where("key = ?", key).First(&config).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 配置不存在，创建默认配置
+			config = TCfgCommon{
+				Key:   key,
+				Value: defaultValue,
+			}
+			if err = GormDB.Create(&config).Error; err != nil {
+				return "", err
+			}
+			return defaultValue, nil
+		}
+		return "", err
+	}
+	return config.Value, nil
 }

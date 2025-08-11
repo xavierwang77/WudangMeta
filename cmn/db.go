@@ -100,6 +100,7 @@ func initDBPool(dsn string) (*gorm.DB, error) {
 func initTable(db *gorm.DB) error {
 	// 自动迁移
 	err := db.AutoMigrate(
+		&TCfgCommon{},
 		&TUser{},
 		&TUserExternal{},
 		&TUserPoints{},

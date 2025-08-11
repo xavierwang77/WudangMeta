@@ -16,14 +16,14 @@ import (
 
 // Machine 抽奖机
 type Machine struct {
-	atomicPrizes     atomic.Value // 内存奖池
-	consumePoints    int          // 单次抽奖消耗积分
-	consumePointsKey string       // 消耗的积分类型
+	atomicPrizes       atomic.Value // 内存奖池
+	consumePointsValue int64        // 单次抽奖消耗积分
+	consumePointsKey   string       // 消耗的积分类型
 }
 
-func NewMachine(consumePoints int, pointsKey string) (*Machine, error) {
+func NewMachine(pointsKey string, consumePoints int64) (*Machine, error) {
 	if consumePoints < 0 {
-		e := fmt.Errorf("consumePoints %d < 0", consumePoints)
+		e := fmt.Errorf("consumePointsValue %d < 0", consumePoints)
 		return nil, e
 	}
 	if pointsKey == "" {
@@ -31,8 +31,8 @@ func NewMachine(consumePoints int, pointsKey string) (*Machine, error) {
 	}
 
 	m := &Machine{
-		consumePoints:    consumePoints,
-		consumePointsKey: pointsKey,
+		consumePointsValue: consumePoints,
+		consumePointsKey:   pointsKey,
 	}
 
 	var emptyPrizes []cmn.TRafflePrize
@@ -77,17 +77,17 @@ func (m *Machine) syncPrizesFromDB() error {
 }
 
 // 重置单词抽奖消耗积分
-func (m *Machine) resetConsumePoints(consumePoints int, pointsKey string) error {
-	if consumePoints < 0 {
-		e := fmt.Errorf("consumePoints %d < 0", consumePoints)
+func (m *Machine) resetConsumePoints(pointsKey string, pointsValue int64) error {
+	if pointsValue < 0 {
+		e := fmt.Errorf("consumePointsValue %d < 0", pointsValue)
 		return e
 	}
-	if pointsKey == "" {
-		pointsKey = "default_points"
-	}
 
-	m.consumePoints = consumePoints
-	m.consumePointsKey = pointsKey
+	m.consumePointsValue = pointsValue
+
+	if pointsKey != "" {
+		m.consumePointsKey = pointsKey
+	}
 
 	return nil
 }
@@ -155,12 +155,12 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 		}
 
 		// 检查积分是否足够
-		if userPoints < float64(m.consumePoints)*float64(raffleCount) {
-			e := fmt.Errorf("insufficient points for user_id %s, current points: %.2f, required: %d", userId.String(), userPoints, m.consumePoints*int(raffleCount))
+		if userPoints < float64(m.consumePointsValue)*float64(raffleCount) {
+			e := fmt.Errorf("insufficient points for user_id %s, current points: %.2f, required: %d", userId.String(), userPoints, m.consumePointsValue*raffleCount)
 			z.Error(e.Error())
 			return e
 		}
-		remainPoints := userPoints - float64(m.consumePoints)*float64(raffleCount)
+		remainPoints := userPoints - float64(m.consumePointsValue)*float64(raffleCount)
 
 		// 记录每次抽奖的奖品名
 		var prizesWon []string

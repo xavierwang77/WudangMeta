@@ -210,6 +210,19 @@ func (TUserCheckIn) TableName() string {
 	return TUserCheckInName
 }
 
+// TCfgCommon 通用配置表
+type TCfgCommon struct {
+	Id        int64  `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // ID
+	Key       string `gorm:"column:key;type:varchar(50);not null;unique;index"`  // 配置键
+	Value     string `gorm:"column:value;type:text"`                             // 配置值
+	CreatedAt int64  `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt int64  `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+}
+
+func (TCfgCommon) TableName() string {
+	return TCommonConfigName
+}
+
 // VUserAssetMeta 用户资产视图
 type VUserAssetMeta struct {
 	Id             int64     `json:"id" gorm:"column:id"`

@@ -29,10 +29,11 @@ func InitRoutes(r *gin.Engine) {
 		api.GET("/sms-code", userMgtHandler.HandleSendSMSCode)   // 发送短信验证码
 		api.POST("/login/by-sms", userMgtHandler.HandleSMSLogin) // 短信验证码登录
 
-		api.GET("/raffle/winners", raffleHandler.HandleQueryRaffleWinners) // 查询抽奖获奖者
-		api.PUT("/raffle/prize/:id", raffleHandler.HandleUpdatePrize)      // 更新奖品信息
-		api.POST("/raffle/prize", raffleHandler.HandleCreatePrize)         // 新增奖品
-		api.GET("/raffle/prizes", raffleHandler.HandleQueryPrizes)         // 查询所有奖品信息
+		api.GET("/raffle/winners", raffleHandler.HandleQueryRaffleWinners)                // 查询抽奖获奖者
+		api.PUT("/raffle/prize/:id", raffleHandler.HandleUpdatePrize)                     // 更新奖品信息
+		api.POST("/raffle/prize", raffleHandler.HandleCreatePrize)                        // 新增奖品
+		api.GET("/raffle/prizes", raffleHandler.HandleQueryPrizes)                        // 查询所有奖品信息
+		api.PUT("/raffle/config/consume-points", raffleHandler.HandleUpdateConsumePoints) // 更新抽奖消耗积分配置
 
 		// 需要认证的路由组
 		authApi := api.Group("/")
