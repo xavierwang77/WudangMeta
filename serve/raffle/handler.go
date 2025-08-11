@@ -2,7 +2,7 @@ package raffle
 
 import (
 	"WudangMeta/cmn"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -24,7 +24,7 @@ func NewHandler() Handler {
 
 // HandleDoRaffle 处理抽奖请求
 func (h *handler) HandleDoRaffle(c *gin.Context) {
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current userId from context")
 		c.JSON(http.StatusOK, gin.H{

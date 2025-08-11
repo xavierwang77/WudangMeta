@@ -7,7 +7,7 @@ import (
 	"WudangMeta/serve/ranking"
 	"WudangMeta/serve/task"
 	"WudangMeta/serve/ubanquan"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,7 @@ import (
 // InitRoutes 初始化路由
 func InitRoutes(r *gin.Engine) {
 
-	userMgtHandler := user_mgt.NewHandler()
+	userMgtHandler := user.NewHandler()
 	ubanquanHandler := ubanquan.NewHandler()
 	pointsHandler := points.NewHandler()
 	assetHandler := asset.NewHandler()
@@ -31,7 +31,7 @@ func InitRoutes(r *gin.Engine) {
 
 		// 需要认证的路由组
 		authApi := api.Group("/")
-		authApi.Use(user_mgt.AuthMiddleware())
+		authApi.Use(user.AuthMiddleware())
 		{
 			authApi.GET("/ubanquan/authentication", ubanquanHandler.HandleAuthentication) // 优版权用户授权
 			authApi.PUT("/ubanquan/asset", ubanquanHandler.HandleUpdateMyAsset)           // 更新优版权用户资产

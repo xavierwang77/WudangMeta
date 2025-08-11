@@ -1,4 +1,4 @@
-package user_mgt
+package user
 
 import (
 	"WudangMeta/cmn"

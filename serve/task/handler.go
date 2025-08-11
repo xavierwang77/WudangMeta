@@ -3,7 +3,7 @@ package task
 import (
 	"WudangMeta/cmn"
 	"WudangMeta/cmn/points_core"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -28,7 +28,7 @@ func NewHandler() Handler {
 
 // HandleAnalyzeMyFortune 处理分析我的运势请求
 func (h *handler) HandleAnalyzeMyFortune(c *gin.Context) {
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current userId from context")
 		c.JSON(http.StatusOK, gin.H{
@@ -111,7 +111,7 @@ func (h *handler) HandleAnalyzeMyFortune(c *gin.Context) {
 // HandleDailyCheckIn 处理每日签到请求
 func (h *handler) HandleDailyCheckIn(c *gin.Context) {
 	// 获取当前用户ID
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{

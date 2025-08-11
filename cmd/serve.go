@@ -15,7 +15,7 @@ import (
 	"WudangMeta/serve/ranking"
 	"WudangMeta/serve/task"
 	"WudangMeta/serve/ubanquan"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -63,7 +63,7 @@ var serveCmd = &cobra.Command{
 		llm.Init()
 
 		// 初始化服务模块
-		user_mgt.Init()
+		user.Init()
 		asset.Init()
 		ubanquan.Init()
 		points.Init()

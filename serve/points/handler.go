@@ -2,7 +2,7 @@ package points
 
 import (
 	"WudangMeta/cmn"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -26,7 +26,7 @@ func NewHandler() Handler {
 // HandleQueryMyPoints 处理获取当前用户积分
 func (h *handler) HandleQueryMyPoints(c *gin.Context) {
 	// 获取当前用户ID
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{

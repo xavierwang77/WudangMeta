@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"WudangMeta/cmn"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -26,7 +26,7 @@ func NewHandler() Handler {
 // HandleQueryMyAsset 处理查询我的资产
 func (h *handler) HandleQueryMyAsset(c *gin.Context) {
 	// 获取当前用户ID
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{

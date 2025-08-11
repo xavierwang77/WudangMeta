@@ -3,7 +3,7 @@ package ubanquan
 import (
 	"WudangMeta/cmn"
 	"WudangMeta/cmn/points_core"
-	"WudangMeta/serve/user_mgt"
+	"WudangMeta/serve/user"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -100,7 +100,7 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
@@ -179,7 +179,7 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 // 从优版权API获取用户资产信息并同步到本地数据库
 func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 	// 获取当前用户ID
-	userId, ok := user_mgt.GetCurrentUserID(c)
+	userId, ok := user.GetCurrentUserID(c)
 	if !ok {
 		z.Error("failed to get current user ID")
 		c.JSON(http.StatusOK, cmn.ReplyProto{
@@ -190,7 +190,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 	}
 
 	// 获取用户的外部openId
-	openId, ok := user_mgt.GetCurrentUserExternalOpenId(c)
+	openId, ok := user.GetCurrentUserExternalOpenId(c)
 	if !ok || openId == "" {
 		z.Error("failed to get user external openId", zap.String("user_id", userId.String()))
 		c.JSON(http.StatusOK, cmn.ReplyProto{
