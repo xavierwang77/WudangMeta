@@ -106,6 +106,7 @@ func initTable(db *gorm.DB) error {
 		&TSmsCodes{},
 		&TRaffleWinners{},
 		&TRaffleLog{},
+		&TRafflePrize{},
 		&TMetaAsset{},
 		&TUserAsset{},
 		&TUserFortune{},

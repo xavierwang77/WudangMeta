@@ -11,6 +11,7 @@ import (
 	"WudangMeta/router"
 	"WudangMeta/serve/asset"
 	"WudangMeta/serve/points"
+	"WudangMeta/serve/raffle"
 	"WudangMeta/serve/ranking"
 	"WudangMeta/serve/task"
 	"WudangMeta/serve/ubanquan"
@@ -68,6 +69,7 @@ var serveCmd = &cobra.Command{
 		points.Init()
 		ranking.Init()
 		task.Init()
+		raffle.Init()
 
 		cmn.MiniLogger.Info("[ YES ] all modules initialed", zap.String("version", cmn.Version))
 

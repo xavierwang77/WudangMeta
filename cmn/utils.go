@@ -3,6 +3,7 @@ package cmn
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -40,4 +41,30 @@ func GetDurationUntilNextTargetTime(hour, minute, second int, locationName strin
 	}
 
 	return targetTime.Sub(now), nil
+}
+
+// InitDir 初始化传入的目录路径（如不存在则创建）
+// 参数 dir 为目录路径（可以是多层）
+// 若成功返回 nil，否则返回错误
+func InitDir(dir string) error {
+	if dir == "" {
+		return fmt.Errorf("target directory path cannot be empty")
+	}
+
+	info, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		// 不存在就创建
+		if mkErr := os.MkdirAll(dir, os.ModePerm); mkErr != nil {
+			return fmt.Errorf("failed to create direction: %w", mkErr)
+		}
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to check target direction exist: %w", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("target %s exist but not a direction", dir)
+	}
+
+	return nil
 }

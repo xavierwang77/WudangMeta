@@ -3,6 +3,7 @@ package router
 import (
 	"WudangMeta/serve/asset"
 	"WudangMeta/serve/points"
+	"WudangMeta/serve/raffle"
 	"WudangMeta/serve/ranking"
 	"WudangMeta/serve/task"
 	"WudangMeta/serve/ubanquan"
@@ -20,6 +21,7 @@ func InitRoutes(r *gin.Engine) {
 	assetHandler := asset.NewHandler()
 	rankingHandler := ranking.NewHandler()
 	taskHandler := task.NewHandler()
+	raffleHandler := raffle.NewHandler()
 
 	// 路由组 /api
 	api := r.Group("/api")
@@ -39,6 +41,7 @@ func InitRoutes(r *gin.Engine) {
 			authApi.POST("/task/fortune", taskHandler.HandleAnalyzeMyFortune)             // 分析我的运势
 			authApi.PATCH("/task/check-in", taskHandler.HandleDailyCheckIn)               // 每日签到
 			authApi.GET("/user/info/me", userMgtHandler.HandleGetCurrentUserInfo)         // 获取当前用户信息
+			authApi.GET("/raffle/do", raffleHandler.HandleDoRaffle)                       // 抽奖
 		}
 	}
 }

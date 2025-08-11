@@ -14,6 +14,7 @@ const (
 
 	TRaffleWinnersName = "t_raffle_winner" // 抽奖获奖者表
 	TRaffleLogName     = "t_raffle_log"    // 抽奖日志表
+	TRafflePrizeName   = "t_raffle_prize"  // 抽奖奖品表
 
 	TMetaAssetName = "t_meta_asset" // 元资产表
 	TUserAssetName = "t_user_asset" // 用户资产表
@@ -62,6 +63,23 @@ type TUserExternal struct {
 
 func (TUserExternal) TableName() string {
 	return TUserExternalName
+}
+
+// TRafflePrize 抽奖奖品表
+type TRafflePrize struct {
+	Id          int64   `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`            // ID
+	Name        string  `json:"name" gorm:"column:name;type:varchar(100);not null;index"`            // 奖品名称
+	Probability float64 `json:"probability" gorm:"column:probability;type:float;not null"`           // 奖品概率
+	TotalCount  int64   `json:"totalCount" gorm:"column:total_count;type:bigint;not null"`           // 奖品总数
+	RemainCount int64   `json:"remainCount" gorm:"column:remain_count;type:bigint;not null"`         // 剩余奖品数量
+	Cost        float64 `json:"cost" gorm:"column:cost;type:float;not null"`                         // 奖品成本
+	Status      string  `json:"status" gorm:"column:status;type:varchar(5)"`                         // 奖品状态 00:启用 02:禁用
+	CreatedAt   int64   `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt   int64   `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+}
+
+func (TRafflePrize) TableName() string {
+	return TRafflePrizeName
 }
 
 // TRaffleWinners 抽奖中奖用户表
