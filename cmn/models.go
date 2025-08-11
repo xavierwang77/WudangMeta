@@ -25,8 +25,9 @@ const (
 	TUserFortuneName = "t_user_fortune"  // 用户运势表
 	TUserCheckInName = "t_user_check_in" // 用户签到表
 
-	VUserAssetMetaName = "v_user_asset_meta" // 用户资产视图
-	VUserInfoName      = "v_user_info"       // 用户信息视图
+	VUserAssetMetaName    = "v_user_asset_meta"    // 用户资产视图
+	VUserInfoName         = "v_user_info"          // 用户信息视图
+	VRaffleWinnerInfoName = "v_raffle_winner_info" // 抽奖获奖者信息视图
 )
 
 // TUser 用户信息表
@@ -84,13 +85,13 @@ func (TRafflePrize) TableName() string {
 
 // TRaffleWinners 抽奖中奖用户表
 type TRaffleWinners struct {
-	Id        int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // ID
-	UserId    uuid.UUID `gorm:"column:user_id;type:uuid;not null;index"`            // 用户ID
-	PrizeName string    `gorm:"column:prize_name;type:varchar(100);not null;index"` // 奖品名称
-	CreatedAt int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
-	UpdatedAt int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+	Id        int64     `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`            // ID
+	UserId    uuid.UUID `json:"userId" gorm:"column:user_id;type:uuid;not null;index"`               // 用户ID
+	PrizeName string    `json:"prizeName" gorm:"column:prize_name;type:varchar(100);not null;index"` // 奖品名称
+	CreatedAt int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
 
-	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	UserInfo TUser `json:"userInfo" gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"` // 用户信息
 }
 
 func (TRaffleWinners) TableName() string {
@@ -251,4 +252,26 @@ type VUserInfo struct {
 
 func (VUserInfo) TableName() string {
 	return VUserInfoName
+}
+
+// VRaffleWinnerInfo 抽奖获奖者信息视图
+type VRaffleWinnerInfo struct {
+	UserId           uuid.UUID `json:"userId" gorm:"column:user_id;type:uuid;not null;index"`                            // 用户ID
+	PrizeName        string    `json:"prizeName" gorm:"column:prize_name;type:varchar(100);not null;index"`              // 奖品名称
+	CreatedAt        int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"`              // 创建时间
+	UpdatedAt        int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"`              // 更新时间
+	OfficialName     string    `json:"officialName" gorm:"column:official_name;type:varchar(50)"`                        // 真实姓名
+	NickName         string    `json:"nickName" gorm:"column:nick_name;type:varchar(50)"`                                // 昵称
+	Email            string    `json:"email" gorm:"column:email;type:varchar(30)"`                                       // 邮箱
+	MobilePhone      string    `json:"mobilePhone" gorm:"column:mobile_phone;type:varchar(11);uniqueIndex"`              // 手机号
+	LoginTime        int64     `json:"loginTime" gorm:"column:login_time;type:bigint"`                                   // 最近登录时间
+	Status           string    `json:"status" gorm:"column:status;type:varchar(2);default:'00';index"`                   // 用户状态 00:启用 01:禁用
+	ExternalPlatform string    `json:"externalPlatform" gorm:"column:external_platform;type:varchar(30);not null;index"` // 第三方平台标识
+	ExternalNickName string    `json:"externalNickName" gorm:"column:external_nick_name;type:text"`                      // 第三方平台用户昵称
+	ExternalAvatar   string    `json:"externalAvatar" gorm:"column:external_avatar;type:text"`                           // 第三方平台用户头像
+	DefaultPoints    float64   `json:"defaultPoints" gorm:"column:default_points;type:float"`                            // 默认积分
+}
+
+func (VRaffleWinnerInfo) TableName() string {
+	return VRaffleWinnerInfoName
 }

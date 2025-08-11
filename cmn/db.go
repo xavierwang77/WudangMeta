@@ -188,6 +188,40 @@ func initView(db *gorm.DB) error {
 		return err
 	}
 
+	// 创建 v_raffle_winner_info 视图
+	// 构造查询，连接抽奖获奖者表、用户表、用户外部信息表和用户积分表
+	raffleWinnerInfoQuery := db.
+		Table("t_raffle_winner AS rw").
+		Select(`
+        rw.user_id,
+        rw.prize_name,
+        rw.created_at,
+        rw.updated_at,
+        u.official_name,
+        u.nick_name,
+        u.email,
+        u.mobile_phone,
+        u.login_time,
+        u.status,
+        ue.platform AS external_platform,
+        ue.nick_name AS external_nick_name,
+        ue.avatar AS external_avatar,
+        COALESCE(up.default_points, 0) AS default_points
+    `).
+		Joins("LEFT JOIN t_user AS u ON rw.user_id = u.id").
+		Joins("LEFT JOIN t_user_external AS ue ON u.id = ue.user_id").
+		Joins("LEFT JOIN t_user_points AS up ON u.id = up.user_id")
+
+	// 创建 v_raffle_winner_info 视图
+	err = db.Migrator().CreateView(
+		VRaffleWinnerInfo{}.TableName(),
+		gorm.ViewOption{Query: raffleWinnerInfoQuery},
+	)
+	if err != nil {
+		logger.Error("create v_raffle_winner_info failed: " + err.Error())
+		return err
+	}
+
 	logger.Info("PG view initialed")
 
 	return nil
