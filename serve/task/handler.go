@@ -17,6 +17,7 @@ import (
 type Handler interface {
 	HandleAnalyzeMyFortune(c *gin.Context)
 	HandleDailyCheckIn(c *gin.Context)
+	HandleQueryMyFortune(c *gin.Context)
 }
 
 type handler struct {
@@ -231,5 +232,55 @@ func (h *handler) HandleDailyCheckIn(c *gin.Context) {
 		Status: 0,
 		Msg:    msg,
 		Data:   replyDataJson,
+	})
+}
+
+// HandleQueryMyFortune 查询我的运势数据
+func (h *handler) HandleQueryMyFortune(c *gin.Context) {
+	// 获取当前用户ID
+	userId, ok := user.GetCurrentUserID(c)
+	if !ok {
+		z.Error("failed to get current user ID")
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: 401,
+			Msg:    "未登录或登录已过期",
+		})
+		return
+	}
+
+	// 查询用户运势数据
+	var userFortune cmn.TUserFortune
+	err := cmn.GormDB.Where("user_id = ?", userId).First(&userFortune).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, cmn.ReplyProto{
+				Status: 1,
+				Msg:    "暂无运势数据，请先进行运势分析",
+			})
+		} else {
+			z.Error("failed to query user fortune", zap.Error(err), zap.String("user_id", userId.String()))
+			c.JSON(http.StatusOK, cmn.ReplyProto{
+				Status: -1,
+				Msg:    "查询运势数据失败",
+			})
+		}
+		return
+	}
+
+	// 将运势数据转换为JSON
+	userFortuneJSON, err := json.Marshal(userFortune)
+	if err != nil {
+		z.Error("failed to marshal user fortune data", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "运势数据序列化失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "success",
+		Data:   userFortuneJSON,
 	})
 }

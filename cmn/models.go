@@ -181,13 +181,13 @@ func (TUserPoints) TableName() string {
 
 // TUserFortune 用户运势表
 type TUserFortune struct {
-	UserId    uuid.UUID      `gorm:"column:user_id;type:uuid;primaryKey;not null;index"` // 用户ID
-	Name      string         `gorm:"column:name;type:varchar(50)"`                       // 用户姓名
-	Gender    string         `gorm:"column:gender;type:varchar(50)"`                     // 用户性别
-	Birth     string         `gorm:"column:birth;type:varchar(50)"`                      // 用户生日
-	Data      datatypes.JSON `gorm:"column:data;type:jsonb"`                             // 运势数据
-	CreatedAt int64          `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
-	UpdatedAt int64          `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+	UserId    uuid.UUID      `json:"userId" gorm:"column:user_id;type:uuid;primaryKey;not null;index"`    // 用户ID
+	Name      string         `json:"name" gorm:"column:name;type:varchar(50)"`                            // 用户姓名
+	Gender    string         `json:"gender" gorm:"column:gender;type:varchar(50)"`                        // 用户性别
+	Birth     string         `json:"birth" gorm:"column:birth;type:varchar(50)"`                          // 用户生日
+	Data      datatypes.JSON `json:"data" gorm:"column:data;type:jsonb"`                                  // 运势数据
+	CreatedAt int64          `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt int64          `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
 
 	UserInfo TUser `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }

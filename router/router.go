@@ -45,6 +45,7 @@ func InitRoutes(r *gin.Engine) {
 			authApi.GET("/asset/me", assetHandler.HandleQueryMyAsset)                     // 查询我的资产
 			authApi.POST("/ranking/list", rankingHandler.HandleQueryRankingList)          // 查询排行榜列表
 			authApi.POST("/task/fortune", taskHandler.HandleAnalyzeMyFortune)             // 分析我的运势
+			authApi.GET("/task/fortune/me", taskHandler.HandleQueryMyFortune)             // 查询我的运势数据
 			authApi.PATCH("/task/check-in", taskHandler.HandleDailyCheckIn)               // 每日签到
 			authApi.GET("/user/info/me", userMgtHandler.HandleGetCurrentUserInfo)         // 获取当前用户信息
 			authApi.GET("/raffle/do", raffleHandler.HandleDoRaffle)                       // 抽奖
