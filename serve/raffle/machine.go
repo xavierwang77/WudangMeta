@@ -143,7 +143,9 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 	err := cmn.GormDB.Transaction(func(tx *gorm.DB) error {
 		// 查询用户积分是否足够抽奖
 		var userPoints float64
-		err := tx.Select(m.consumePointsKey).Where("user_id = ?", userId).Scan(&userPoints).Error
+		err := tx.Model(&cmn.TUserPoints{}).
+			Where("user_id = ?", userId).
+			Pluck(m.consumePointsKey, &userPoints).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				e := fmt.Errorf("user points not found for user_id %s", userId.String())
@@ -156,9 +158,8 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 
 		// 检查积分是否足够
 		if userPoints < float64(m.consumePointsValue)*float64(raffleCount) {
-			e := fmt.Errorf("insufficient points for user_id %s, current points: %.2f, required: %d", userId.String(), userPoints, m.consumePointsValue*raffleCount)
-			z.Error(e.Error())
-			return e
+			z.Sugar().Error("insufficient points for user_id %s, current points: %.2f, required: %d", userId.String(), userPoints, m.consumePointsValue*raffleCount)
+			return fmt.Errorf("您的积分不足，无法进行抽奖\n当前积分：%.2f，抽奖所需积分：%d", userPoints, m.consumePointsValue*raffleCount)
 		}
 		remainPoints := userPoints - float64(m.consumePointsValue)*float64(raffleCount)
 

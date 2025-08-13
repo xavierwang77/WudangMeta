@@ -76,7 +76,7 @@ func (h *handler) HandleDoRaffle(c *gin.Context) {
 		z.Error("failed to perform raffle", zap.Error(err))
 		c.JSON(http.StatusOK, gin.H{
 			"status": -1,
-			"msg":    "抽奖失败，请稍后再试",
+			"msg":    err.Error(),
 		})
 		return
 	}
