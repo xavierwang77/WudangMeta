@@ -158,7 +158,7 @@ func initView(db *gorm.DB) error {
 	}
 
 	// 创建 v_user_info 视图
-	// 构造查询，连接用户表、用户外部信息表、用户积分表和用户资产表
+	// 构造查询，连接用户表、用户外部信息表、用户积分表、用户资产表和抽奖获奖者表
 	userInfoQuery := db.
 		Table("t_user AS u").
 		Select(`
@@ -175,11 +175,13 @@ func initView(db *gorm.DB) error {
         ue.nick_name AS external_nick_name,
         ue.avatar AS external_avatar,
         COALESCE(up.default_points, 0) AS default_points,
-        COALESCE(ua_count.asset_count, 0) AS asset_count
+        COALESCE(ua_count.asset_count, 0) AS asset_count,
+        COALESCE(rw_count.raffle_prize_count, 0) AS raffle_prize_count
     `).
 		Joins("LEFT JOIN t_user_external AS ue ON u.id = ue.user_id").
 		Joins("LEFT JOIN t_user_points AS up ON u.id = up.user_id").
-		Joins("LEFT JOIN (SELECT user_id, COUNT(*) as asset_count FROM t_user_asset GROUP BY user_id) AS ua_count ON u.id = ua_count.user_id")
+		Joins("LEFT JOIN (SELECT user_id, COUNT(*) as asset_count FROM t_user_asset GROUP BY user_id) AS ua_count ON u.id = ua_count.user_id").
+		Joins("LEFT JOIN (SELECT user_id, COUNT(*) as raffle_prize_count FROM t_raffle_winner GROUP BY user_id) AS rw_count ON u.id = rw_count.user_id")
 
 	// 创建 v_user_info 视图
 	err = db.Migrator().CreateView(

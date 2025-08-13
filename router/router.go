@@ -33,8 +33,14 @@ func InitRoutes(r *gin.Engine) {
 		api.PUT("/raffle/prize/:id", raffleHandler.HandleUpdatePrize)                     // 更新奖品信息
 		api.POST("/raffle/prize", raffleHandler.HandleCreatePrize)                        // 新增奖品
 		api.GET("/raffle/prizes", raffleHandler.HandleQueryPrizes)                        // 查询所有奖品信息
+		api.DELETE("/raffle/prizes", raffleHandler.HandleDeletePrizes)                    // 删除奖品
 		api.PUT("/raffle/config/consume-points", raffleHandler.HandleUpdateConsumePoints) // 更新抽奖消耗积分配置
-		api.GET("/user/info", userMgtHandler.HandleGetUserInfoByPhone)                    // 根据手机号获取用户信息
+		api.GET("/raffle/config/consume-points", raffleHandler.HandleQueryConsumePoints)  // 获取抽奖消耗积分配置
+		api.GET("/user/info/single", userMgtHandler.HandleGetUserInfoByPhone)             // 获取单个用户信息
+		api.GET("/user/info", userMgtHandler.HandleQueryUserInfoList)                     // 获取用户信息列表
+		api.GET("/asset/meta", assetHandler.HandleQueryMetaAssets)                        // 查询元数据资产
+		api.POST("/ranking/list", rankingHandler.HandleQueryRankingList)                  // 查询排行榜列表
+		api.GET("/asset", assetHandler.HandleQueryUserAssetsByPhone)                      // 根据手机号查询用户资产
 
 		// 需要认证的路由组
 		authApi := api.Group("/")
@@ -44,7 +50,6 @@ func InitRoutes(r *gin.Engine) {
 			authApi.PUT("/ubanquan/asset", ubanquanHandler.HandleUpdateMyAsset)           // 更新优版权用户资产
 			authApi.GET("/points/me", pointsHandler.HandleQueryMyPoints)                  // 获取我的积分
 			authApi.GET("/asset/me", assetHandler.HandleQueryMyAsset)                     // 查询我的资产
-			authApi.POST("/ranking/list", rankingHandler.HandleQueryRankingList)          // 查询排行榜列表
 			authApi.POST("/task/fortune", taskHandler.HandleAnalyzeMyFortune)             // 分析我的运势
 			authApi.GET("/task/fortune/me", taskHandler.HandleQueryMyFortune)             // 查询我的运势数据
 			authApi.PATCH("/task/check-in", taskHandler.HandleDailyCheckIn)               // 每日签到

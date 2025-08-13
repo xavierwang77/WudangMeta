@@ -44,6 +44,7 @@ func (h *handler) HandleQueryRankingList(c *gin.Context) {
 
 		type Filter struct {
 			AssetIds []int64 `json:"assetIds,omitempty"`
+			MinValue float64 `json:"minValue,omitempty"`
 		}
 
 		var filter Filter
@@ -59,7 +60,7 @@ func (h *handler) HandleQueryRankingList(c *gin.Context) {
 			}
 		}
 
-		rankingList, rowCount, err := QueryAssetRankingList(c, req.Page, req.PageSize, filter.AssetIds)
+		rankingList, rowCount, err := QueryAssetRankingList(c, req.Page, req.PageSize, filter.AssetIds, filter.MinValue)
 		if err != nil {
 			z.Error("failed to query asset ranking list", zap.Error(err))
 			c.JSON(http.StatusOK, cmn.ReplyProto{

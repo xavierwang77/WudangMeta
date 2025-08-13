@@ -5,6 +5,7 @@ import (
 	"WudangMeta/serve/user"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,6 +22,8 @@ type Handler interface {
 	HandleUpdatePrize(c *gin.Context)
 	HandleCreatePrize(c *gin.Context)
 	HandleUpdateConsumePoints(c *gin.Context)
+	HandleQueryConsumePoints(c *gin.Context)
+	HandleDeletePrizes(c *gin.Context)
 }
 
 type handler struct {
@@ -119,6 +122,9 @@ func (h *handler) HandleQueryRaffleWinners(c *gin.Context) {
 		size = 100
 	}
 
+	// 获取手机号筛选参数（可选）
+	mobilePhone := c.Query("mobilePhone")
+
 	// 计算偏移量
 	offset := (page - 1) * size
 
@@ -126,8 +132,14 @@ func (h *handler) HandleQueryRaffleWinners(c *gin.Context) {
 	var winners []cmn.VRaffleWinnerInfo
 	var total int64
 
+	// 构建查询条件
+	query := cmn.GormDB.Model(&cmn.VRaffleWinnerInfo{})
+	if mobilePhone != "" {
+		query = query.Where("mobile_phone = ?", mobilePhone)
+	}
+
 	// 先查询总数
-	if err := cmn.GormDB.Model(&cmn.VRaffleWinnerInfo{}).Count(&total).Error; err != nil {
+	if err = query.Count(&total).Error; err != nil {
 		z.Error("failed to count raffle winners", zap.Error(err))
 		c.JSON(http.StatusOK, gin.H{
 			"status": -1,
@@ -137,7 +149,7 @@ func (h *handler) HandleQueryRaffleWinners(c *gin.Context) {
 	}
 
 	// 分页查询数据
-	if err := cmn.GormDB.Model(&cmn.VRaffleWinnerInfo{}).
+	if err = query.
 		Order("created_at DESC").
 		Offset(offset).
 		Limit(size).
@@ -653,5 +665,177 @@ func (h *handler) HandleUpdateConsumePoints(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "抽奖消耗积分配置更新成功",
+	})
+}
+
+// HandleQueryConsumePoints 查询当前抽奖消耗积分配置
+func (h *handler) HandleQueryConsumePoints(c *gin.Context) {
+	// 查询消耗积分键配置
+	var consumePointsKeyConfig cmn.TCfgCommon
+	if err := cmn.GormDB.Where("key = ?", cfgKeyConsumePointsKey).First(&consumePointsKeyConfig).Error; err != nil {
+		z.Error("failed to query consume points key config", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询消耗积分键配置失败",
+		})
+		return
+	}
+
+	// 查询消耗积分值配置
+	var consumePointsValueConfig cmn.TCfgCommon
+	if err := cmn.GormDB.Where("key = ?", cfgKeyConsumePointsValue).First(&consumePointsValueConfig).Error; err != nil {
+		z.Error("failed to query consume points value config", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询消耗积分值配置失败",
+		})
+		return
+	}
+
+	// 转换积分值为整数
+	consumePointsValue, err := strconv.ParseInt(consumePointsValueConfig.Value, 10, 64)
+	if err != nil {
+		z.Error("failed to parse consume points value", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "消耗积分值格式错误",
+		})
+		return
+	}
+
+	// 构造响应数据
+	responseData := map[string]interface{}{
+		"consumePointsKey":   consumePointsKeyConfig.Value,
+		"consumePointsValue": consumePointsValue,
+	}
+
+	// 序列化响应数据
+	responseJson, err := json.Marshal(responseData)
+	if err != nil {
+		z.Error("failed to marshal response data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "响应数据序列化失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "查询消耗积分配置成功",
+		Data:   responseJson,
+	})
+}
+
+// HandleDeletePrizes 批量删除奖品
+func (h *handler) HandleDeletePrizes(c *gin.Context) {
+	// 解析请求体
+	var req cmn.ReqProto
+	if err := c.ShouldBind(&req); err != nil {
+		z.Error("failed to bind request", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体格式错误",
+		})
+		return
+	}
+
+	var deleteData struct {
+		PrizeIds []int64 `json:"prizeIds"`
+	}
+	if err := json.Unmarshal(req.Data, &deleteData); err != nil {
+		z.Error("failed to unmarshal request data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体data字段格式错误",
+		})
+		return
+	}
+
+	// 验证参数
+	if len(deleteData.PrizeIds) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "奖品ID列表不能为空",
+		})
+		return
+	}
+
+	// 限制批量删除数量
+	if len(deleteData.PrizeIds) > 100 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "单次最多删除100个奖品",
+		})
+		return
+	}
+
+	// 检查奖品是否存在
+	var existingPrizes []cmn.TRafflePrize
+	if err := cmn.GormDB.Where("id IN ?", deleteData.PrizeIds).Find(&existingPrizes).Error; err != nil {
+		z.Error("failed to query existing prizes", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询奖品失败",
+		})
+		return
+	}
+
+	// 检查是否所有奖品都存在
+	if len(existingPrizes) != len(deleteData.PrizeIds) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "部分奖品不存在",
+		})
+		return
+	}
+
+	// 开启事务进行删除和同步操作
+	tx := cmn.GormDB.Begin()
+	if tx.Error != nil {
+		z.Error("failed to begin transaction", zap.Error(tx.Error))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "开启事务失败",
+		})
+		return
+	}
+
+	// 批量删除奖品
+	result := tx.Where("id IN ?", deleteData.PrizeIds).Delete(&cmn.TRafflePrize{})
+	if result.Error != nil {
+		z.Error("failed to delete prizes", zap.Error(result.Error))
+		tx.Rollback()
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "删除奖品失败",
+		})
+		return
+	}
+
+	// 删除奖品后，需要重新同步到内存奖池
+	if err := machine.syncPrizesFromDB(); err != nil {
+		z.Error("failed to sync prizes to memory", zap.Error(err))
+		tx.Rollback()
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "同步奖品到内存失败，已回滚删除操作",
+		})
+		return
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		z.Error("failed to commit transaction", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "提交事务失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    fmt.Sprintf("成功删除%d个奖品", result.RowsAffected),
 	})
 }

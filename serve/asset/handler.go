@@ -14,6 +14,8 @@ import (
 
 type Handler interface {
 	HandleQueryMyAsset(c *gin.Context)
+	HandleQueryMetaAssets(c *gin.Context)
+	HandleQueryUserAssetsByPhone(c *gin.Context)
 }
 
 type handler struct {
@@ -123,6 +125,182 @@ func (h *handler) HandleQueryMyAsset(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status:   0,
 		Msg:      "查询资产成功",
+		Data:     responseJson,
+		RowCount: totalCount,
+	})
+}
+
+// HandleQueryMetaAssets 处理查询所有元资产信息
+func (h *handler) HandleQueryMetaAssets(c *gin.Context) {
+	// 获取分页参数
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageSize := c.Query("pageSize")
+	if pageSize == "" {
+		pageSize = "10"
+	}
+
+	// 转换分页参数
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt < 1 {
+		pageInt = 1
+	}
+	pageSizeInt, err := strconv.Atoi(pageSize)
+	if err != nil || pageSizeInt < 1 || pageSizeInt > 1000 {
+		pageSizeInt = 10
+	}
+
+	// 计算偏移量
+	offset := (pageInt - 1) * pageSizeInt
+
+	// 查询元资产总数
+	var totalCount int64 = 0
+	err = cmn.GormDB.Model(&cmn.TMetaAsset{}).Count(&totalCount).Error
+	if err != nil {
+		z.Error("failed to count meta assets", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询元资产总数失败",
+		})
+		return
+	}
+
+	// 查询元资产列表
+	var metaAssets []cmn.TMetaAsset
+	err = cmn.GormDB.Order("created_at DESC").
+		Limit(pageSizeInt).
+		Offset(offset).
+		Find(&metaAssets).Error
+	if err != nil {
+		z.Error("failed to query meta assets", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询元资产失败",
+		})
+		return
+	}
+
+	// 序列化响应数据
+	responseJson, err := json.Marshal(metaAssets)
+	if err != nil {
+		z.Error("failed to marshal meta assets", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "响应数据序列化失败",
+		})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status:   0,
+		Msg:      "查询元资产成功",
+		Data:     responseJson,
+		RowCount: totalCount,
+	})
+}
+
+// HandleQueryUserAssetsByPhone 处理按手机号查询用户资产库
+func (h *handler) HandleQueryUserAssetsByPhone(c *gin.Context) {
+	// 获取手机号参数
+	mobilePhone := c.Query("mobilePhone")
+	if mobilePhone == "" {
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "手机号参数不能为空",
+		})
+		return
+	}
+
+	// 获取分页参数
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageSize := c.Query("pageSize")
+	if pageSize == "" {
+		pageSize = "10"
+	}
+
+	// 转换分页参数
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt < 1 {
+		pageInt = 1
+	}
+	pageSizeInt, err := strconv.Atoi(pageSize)
+	if err != nil || pageSizeInt < 1 || pageSizeInt > 1000 {
+		pageSizeInt = 10
+	}
+
+	// 计算偏移量
+	offset := (pageInt - 1) * pageSizeInt
+
+	// 查询用户资产总数
+	var totalCount int64 = 0
+	err = cmn.GormDB.Model(&cmn.VUserAssetMeta{}).Where("mobile_phone = ?", mobilePhone).Count(&totalCount).Error
+	if err != nil {
+		z.Error("failed to count user assets by phone", zap.Error(err), zap.String("mobile_phone", mobilePhone))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户资产总数失败",
+		})
+		return
+	}
+
+	// 查询用户资产列表
+	var userAssets []cmn.VUserAssetMeta
+	err = cmn.GormDB.Where("mobile_phone = ?", mobilePhone).
+		Order("created_at DESC").
+		Limit(pageSizeInt).
+		Offset(offset).
+		Find(&userAssets).Error
+	if err != nil {
+		z.Error("failed to query user assets by phone", zap.Error(err), zap.String("mobile_phone", mobilePhone))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户资产失败",
+		})
+		return
+	}
+
+	// 查询所有资产中最新的CreatedAt作为查询时间
+	var latestCreatedAt int64
+	err = cmn.GormDB.Model(&cmn.VUserAssetMeta{}).
+		Where("mobile_phone = ?", mobilePhone).
+		Select("COALESCE(MAX(created_at), 0)").
+		Scan(&latestCreatedAt).Error
+	if err != nil {
+		z.Error("failed to query latest created_at by phone", zap.Error(err), zap.String("mobile_phone", mobilePhone))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询最新创建时间失败",
+		})
+		return
+	}
+
+	// 构造响应数据结构
+	responseData := map[string]interface{}{
+		"queryTime": latestCreatedAt,
+		"assets":    userAssets,
+	}
+
+	// 序列化响应数据
+	responseJson, err := json.Marshal(responseData)
+	if err != nil {
+		z.Error("failed to marshal response data", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "响应数据序列化失败",
+		})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status:   0,
+		Msg:      "查询用户资产成功",
 		Data:     responseJson,
 		RowCount: totalCount,
 	})

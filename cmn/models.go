@@ -130,14 +130,14 @@ func (TSmsCodes) TableName() string {
 
 // TMetaAsset 元资产表
 type TMetaAsset struct {
-	Id         int64   `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // 元资产ID
-	Name       string  `gorm:"column:name;type:text;not null;unique;index"`        // 元资产名称
-	CoverImg   string  `gorm:"column:cover_img;type:text"`                         // 元资产图片
-	ExternalNo string  `gorm:"column:external_id;type:text"`                       // 元资产外部编号
-	Value      float64 `gorm:"column:value;type:float"`                            // 元资产价值
-	Platform   string  `gorm:"column:platform;type:text"`                          // 元资产所属平台
-	CreatedAt  int64   `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
-	UpdatedAt  int64   `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+	Id         int64   `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`            // 元资产ID
+	Name       string  `json:"name" gorm:"column:name;type:text;not null;unique;index"`             // 元资产名称
+	CoverImg   string  `json:"coverImg" gorm:"column:cover_img;type:text"`                          // 元资产图片
+	ExternalNo string  `json:"externalNo" gorm:"column:external_id;type:text"`                      // 元资产外部编号
+	Value      float64 `json:"value" gorm:"column:value;type:float"`                                // 元资产价值
+	Platform   string  `json:"platform" gorm:"column:platform;type:text"`                           // 元资产所属平台
+	CreatedAt  int64   `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt  int64   `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
 }
 
 func (TMetaAsset) TableName() string {
@@ -262,6 +262,7 @@ type VUserInfo struct {
 	ExternalAvatar   string    `json:"externalAvatar" gorm:"column:external_avatar;type:text"`                           // 第三方平台用户头像
 	DefaultPoints    float64   `json:"defaultPoints" gorm:"column:default_points;type:float"`                            // 默认积分
 	AssetCount       int64     `json:"assetCount" gorm:"column:asset_count;type:bigint"`                                 // 资产数量
+	RafflePrizeCount int64     `json:"rafflePrizeCount" gorm:"column:raffle_prize_count;type:bigint"`                    // 获得奖品数量
 }
 
 func (VUserInfo) TableName() string {

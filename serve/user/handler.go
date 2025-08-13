@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,7 @@ type Handler interface {
 	HandleSMSLogin(c *gin.Context)
 	HandleGetCurrentUserInfo(c *gin.Context)
 	HandleGetUserInfoByPhone(c *gin.Context)
+	HandleQueryUserInfoList(c *gin.Context)
 }
 
 type handler struct {
@@ -370,4 +372,77 @@ func (h *handler) HandleGetUserInfoByPhone(c *gin.Context) {
 		Data:   userInfoJSON,
 	})
 	return
+}
+
+// HandleQueryUserInfoList 分页查询用户信息列表
+func (h *handler) HandleQueryUserInfoList(c *gin.Context) {
+	// 获取分页参数
+	pageStr := c.Query("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	sizeStr := c.Query("pageSize")
+	pageSize, err := strconv.Atoi(sizeStr)
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	// 限制每页最大数量
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	// 获取查询关键词（可选）
+	keyword := c.Query("keyword")
+
+	// 构建查询条件
+	query := cmn.GormDB.Model(&cmn.VUserInfo{})
+	if keyword == "raffle-winner" {
+		// 只查询奖品数量不为0的用户
+		query = query.Where("raffle_prize_count > 0")
+	}
+
+	// 查询总记录数
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		z.Error("failed to count user info", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户总数失败",
+		})
+		return
+	}
+
+	// 分页查询用户信息列表
+	var userInfoList []cmn.VUserInfo
+	offset := (page - 1) * pageSize
+	err = query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&userInfoList).Error
+	if err != nil {
+		z.Error("failed to query user info list", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户信息列表失败",
+		})
+		return
+	}
+
+	// 将响应数据序列化为JSON
+	userInfoListJSON, err := json.Marshal(userInfoList)
+	if err != nil {
+		z.Error("failed to marshal user info list", zap.Error(err))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "序列化用户信息列表失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status:   0,
+		Msg:      "查询用户信息列表成功",
+		Data:     userInfoListJSON,
+		RowCount: total,
+	})
 }

@@ -10,8 +10,8 @@ import (
 )
 
 // QueryAssetRankingList 查询资产排行榜列表
-// 根据用户资产总值进行排名，支持分页和资产类型过滤
-func QueryAssetRankingList(ctx context.Context, page, pageSize int64, filterMetaAsset []int64) ([]AssetRankingList, int64, error) {
+// 根据用户资产总值进行排名，支持分页、资产类型过滤和最小价值过滤
+func QueryAssetRankingList(ctx context.Context, page, pageSize int64, filterMetaAsset []int64, minValue float64) ([]AssetRankingList, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -27,6 +27,11 @@ func QueryAssetRankingList(ctx context.Context, page, pageSize int64, filterMeta
 	// 如果有资产类型过滤条件，则添加过滤
 	if len(filterMetaAsset) > 0 {
 		subQuery = subQuery.Where("meta_asset_id IN ?", filterMetaAsset)
+	}
+
+	// 如果有最小价值过滤条件，则添加HAVING过滤
+	if minValue > 0 {
+		subQuery = subQuery.Having("SUM(meta_asset_value) >= ?", minValue)
 	}
 
 	// 先查询总记录数
