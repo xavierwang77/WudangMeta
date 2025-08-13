@@ -42,8 +42,19 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 		return
 	}
 
+	// 获取全局token
+	token := ubanquan_core.GetGlobalToken()
+	if token == nil {
+		z.Error("global token is not available")
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "优版权token未初始化",
+		})
+		return
+	}
+
 	// 向优版权API发送GET请求
-	url := fmt.Sprintf("https://test-apimall.ubanquan.cn/dapp/authentication?code=%s", code)
+	url := fmt.Sprintf("%s/dapp/authentication?code=%s", ubanquan_core.BaseApiUrl, code)
 	fastReq := fasthttp.AcquireRequest()
 	fastResp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(fastReq)
@@ -51,6 +62,7 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 
 	fastReq.SetRequestURI(url)
 	fastReq.Header.SetMethod("GET")
+	fastReq.Header.Set("Authorization", token.AccessToken)
 
 	// 发送请求
 	client := &fasthttp.Client{
@@ -201,8 +213,19 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 		return
 	}
 
+	// 获取全局token
+	token := ubanquan_core.GetGlobalToken()
+	if token == nil {
+		z.Error("global token is not available")
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "优版权token未初始化",
+		})
+		return
+	}
+
 	// 向优版权API发送GET请求获取用户资产
-	url := fmt.Sprintf("https://test-apimall.ubanquan.cn/dapp/card?openId=%s", openId)
+	url := fmt.Sprintf("%s/dapp/card?openId=%s", ubanquan_core.BaseApiUrl, openId)
 	fastReq := fasthttp.AcquireRequest()
 	fastResp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(fastReq)
@@ -210,6 +233,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 
 	fastReq.SetRequestURI(url)
 	fastReq.Header.SetMethod("GET")
+	fastReq.Header.Set("Authorization", token.AccessToken)
 
 	// 发送请求
 	client := &fasthttp.Client{

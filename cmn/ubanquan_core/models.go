@@ -2,6 +2,12 @@ package ubanquan_core
 
 import "github.com/google/uuid"
 
+type Token struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	ExpiresTime  int64  `json:"expiresTime"`
+}
+
 // AssetUpdateResult 资产更新结果
 type AssetUpdateResult struct {
 	UserId       uuid.UUID `json:"userId"`       // 用户ID

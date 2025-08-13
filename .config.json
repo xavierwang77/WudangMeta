@@ -25,8 +25,9 @@
     }
   },
   "ubanquan": {
-    "appId": "245502289000001754382693",
-    "appSecret": "CA2650DFF3CF04291A248DDDB2B64A63"
+    "baseApiUrl": "https://test-apimall.ubanquan.cn",
+    "appId": "a7f001fc",
+    "appSecret": "81D55AFE028374929E569F9722A42843"
   },
   "llm": {
     "enable": true,
