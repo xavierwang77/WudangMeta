@@ -84,7 +84,7 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 		z.Error("failed to unmarshal ubanquan response", zap.Error(err))
 		c.JSON(http.StatusOK, cmn.ReplyProto{
 			Status: 1,
-			Msg:    "第三方API响应解析失败",
+			Msg:    "优版权API响应解析失败",
 		})
 		return
 	}

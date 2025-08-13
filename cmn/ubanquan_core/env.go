@@ -1,4 +1,4 @@
-package points_core
+package ubanquan_core
 
 import (
 	"WudangMeta/cmn"
@@ -6,10 +6,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	assetPlatform = "ubanquan" // 资产平台标识
+)
+
 var z *zap.Logger
 
 func Init() {
 	z = cmn.GetLogger()
-
-	cmn.MiniLogger.Info("[ OK ] ubanquan-core module initialized")
 }

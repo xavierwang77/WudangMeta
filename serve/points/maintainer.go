@@ -1,7 +1,9 @@
-package points_core
+package points
 
 import (
 	"WudangMeta/cmn"
+	"WudangMeta/cmn/points_core"
+	"WudangMeta/cmn/ubanquan_core"
 	"context"
 	"time"
 
@@ -29,9 +31,15 @@ func userAssetPointsMaintainer(ctx context.Context, db *gorm.DB) {
 		case <-timer.C:
 			// 每天 00:00 更新一次用户积分
 			go func() {
-				errs := AddAllUserPointsFromAssets(ctx, db)
+				// 计算现有资产价值并累加到用户积分
+				errs := points_core.AddAllUserPointsFromAssets(ctx, db)
 				if len(errs) > 0 {
 					z.Error("failed to add all user points from assets", zap.Any("errors", errs))
+				}
+				// 更新用户优版权资产
+				_, err = ubanquan_core.UpdateAllUsersAssets(ctx)
+				if err != nil {
+					z.Error("failed to update all users' ubanquan assets", zap.Error(err))
 				}
 			}()
 		}

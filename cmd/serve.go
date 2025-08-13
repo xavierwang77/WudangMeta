@@ -8,6 +8,7 @@ import (
 	"WudangMeta/cmn/llm"
 	"WudangMeta/cmn/points_core"
 	"WudangMeta/cmn/sms"
+	"WudangMeta/cmn/ubanquan_core"
 	"WudangMeta/router"
 	"WudangMeta/serve/asset"
 	"WudangMeta/serve/points"
@@ -61,6 +62,7 @@ var serveCmd = &cobra.Command{
 		sms.Init()
 		points_core.Init()
 		llm.Init()
+		ubanquan_core.Init()
 
 		// 初始化服务模块
 		user.Init()

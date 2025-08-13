@@ -207,7 +207,7 @@ func AddAllUserPointsFromAssets(ctx context.Context, db *gorm.DB) []error {
 	return nil
 }
 
-// addSingleUserPointsFromAssets  根据资产计算并累加到单个用户积分
+// addSingleUserPointsFromAssets 根据资产计算并累加到单个用户积分
 // 计算用户资产总价值并累加到现有积分上
 func addSingleUserPointsFromAssets(ctx context.Context, db *gorm.DB, userId uuid.UUID) error {
 	if db == nil {
