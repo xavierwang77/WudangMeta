@@ -3,6 +3,7 @@ package ubanquan
 import (
 	"WudangMeta/cmn"
 	"WudangMeta/cmn/points_core"
+	"WudangMeta/cmn/ubanquan_core"
 	"WudangMeta/serve/user"
 	"encoding/json"
 	"errors"
@@ -118,12 +119,12 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 	err = cmn.GormDB.Transaction(func(tx *gorm.DB) error {
 		// 查找或创建用户外部信息记录
 		var userExternal cmn.TUserExternal
-		err = tx.Where("user_id = ? AND platform = ?", userId, assetPlatform).First(&userExternal).Error
+		err = tx.Where("user_id = ? AND platform = ?", userId, ubanquan_core.AssetPlatform).First(&userExternal).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 创建新记录
 				userExternal = cmn.TUserExternal{
-					Platform: assetPlatform,
+					Platform: ubanquan_core.AssetPlatform,
 					UserId:   userId,
 					OpenId:   ubanquanResp.Data.OpenId,
 					NickName: ubanquanResp.Data.NickName,
@@ -286,7 +287,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 			for _, nfrInfo := range assetData.NFRInfoList {
 				// 查找匹配的元资产
 				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, assetPlatform).First(&metaAsset).Error
+				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, ubanquan_core.AssetPlatform).First(&metaAsset).Error
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						// 元资产不存在，跳过

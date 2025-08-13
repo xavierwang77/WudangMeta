@@ -20,7 +20,7 @@ import (
 func UpdateAllUsersAssets(ctx context.Context) ([]*AssetUpdateResult, error) {
 	// 查询所有已绑定优版权账号的用户
 	var userExternals []cmn.TUserExternal
-	err := cmn.GormDB.Where("platform = ? AND open_id != '' AND open_id IS NOT NULL", assetPlatform).Find(&userExternals).Error
+	err := cmn.GormDB.Where("platform = ? AND open_id != '' AND open_id IS NOT NULL", AssetPlatform).Find(&userExternals).Error
 	if err != nil {
 		z.Error("failed to query users with ubanquan openId", zap.Error(err))
 		return nil, fmt.Errorf("failed to query users with ubanquan openId: %w", err)
@@ -84,7 +84,7 @@ func UpdateUserAssetByUserId(ctx context.Context, userId uuid.UUID) (*AssetUpdat
 
 	// 获取用户的外部openId
 	var userExternal cmn.TUserExternal
-	err := cmn.GormDB.Where("user_id = ? AND platform = ?", userId, assetPlatform).First(&userExternal).Error
+	err := cmn.GormDB.Where("user_id = ? AND platform = ?", userId, AssetPlatform).First(&userExternal).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			z.Error("user external info not found", zap.String("user_id", userId.String()))
@@ -172,7 +172,7 @@ func syncUserAssetsToDatabase(ctx context.Context, userId uuid.UUID, cardResp *U
 			for _, nfrInfo := range assetData.NFRInfoList {
 				// 查找匹配的元资产
 				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, assetPlatform).First(&metaAsset).Error
+				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, AssetPlatform).First(&metaAsset).Error
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						// 元资产不存在，跳过
