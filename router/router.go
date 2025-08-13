@@ -34,6 +34,7 @@ func InitRoutes(r *gin.Engine) {
 		api.POST("/raffle/prize", raffleHandler.HandleCreatePrize)                        // 新增奖品
 		api.GET("/raffle/prizes", raffleHandler.HandleQueryPrizes)                        // 查询所有奖品信息
 		api.PUT("/raffle/config/consume-points", raffleHandler.HandleUpdateConsumePoints) // 更新抽奖消耗积分配置
+		api.GET("/user/info", userMgtHandler.HandleGetUserInfoByPhone)                    // 根据手机号获取用户信息
 
 		// 需要认证的路由组
 		authApi := api.Group("/")

@@ -20,6 +20,7 @@ type Handler interface {
 	HandleSendSMSCode(c *gin.Context)
 	HandleSMSLogin(c *gin.Context)
 	HandleGetCurrentUserInfo(c *gin.Context)
+	HandleGetUserInfoByPhone(c *gin.Context)
 }
 
 type handler struct {
@@ -314,6 +315,58 @@ func (h *handler) HandleGetCurrentUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "获取用户信息成功",
+		Data:   userInfoJSON,
+	})
+	return
+}
+
+// HandleGetUserInfoByPhone 根据手机号查询用户信息
+func (h *handler) HandleGetUserInfoByPhone(c *gin.Context) {
+	// 从query参数获取手机号
+	mobilePhone := c.Query("mobilePhone")
+	if mobilePhone == "" {
+		z.Error("mobile phone is empty")
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: 1,
+			Msg:    "手机号不能为空",
+		})
+		return
+	}
+
+	// 从 VUserInfo 视图查询用户信息
+	var userInfo cmn.VUserInfo
+	err := cmn.GormDB.Where("mobile_phone = ?", mobilePhone).First(&userInfo).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			z.Error("user not found by mobile phone", zap.String("mobilePhone", mobilePhone))
+			c.JSON(http.StatusOK, cmn.ReplyProto{
+				Status: 1,
+				Msg:    "用户不存在",
+			})
+			return
+		}
+		z.Error("failed to query user info by mobile phone", zap.Error(err), zap.String("mobilePhone", mobilePhone))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "查询用户信息失败",
+		})
+		return
+	}
+
+	// 将用户信息序列化为JSON并返回
+	userInfoJSON, err := json.Marshal(userInfo)
+	if err != nil {
+		z.Error("failed to marshal user info", zap.Error(err), zap.String("mobilePhone", mobilePhone))
+		c.JSON(http.StatusOK, cmn.ReplyProto{
+			Status: -1,
+			Msg:    "序列化用户信息失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "查询用户信息成功",
 		Data:   userInfoJSON,
 	})
 	return

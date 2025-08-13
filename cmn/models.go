@@ -261,6 +261,7 @@ type VUserInfo struct {
 	ExternalNickName string    `json:"externalNickName" gorm:"column:external_nick_name;type:text"`                      // 第三方平台用户昵称
 	ExternalAvatar   string    `json:"externalAvatar" gorm:"column:external_avatar;type:text"`                           // 第三方平台用户头像
 	DefaultPoints    float64   `json:"defaultPoints" gorm:"column:default_points;type:float"`                            // 默认积分
+	AssetCount       int64     `json:"assetCount" gorm:"column:asset_count;type:bigint"`                                 // 资产数量
 }
 
 func (VUserInfo) TableName() string {
