@@ -24,7 +24,7 @@ ARG VERSION=dev
 
 # 获取依赖并编译可执行文件，注入版本号
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
-    -ldflags "-X 'OffMetaCore/cmn.Version=${VERSION}'" \
+    -ldflags "-X 'WudangMeta/cmn.Version=${VERSION}'" \
     -o main .
 
 # 第二阶段：运行阶段
