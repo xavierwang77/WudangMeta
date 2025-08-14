@@ -15,7 +15,7 @@ var (
 	GormDB *gorm.DB
 )
 
-func InitDB() {
+func InitDB(debug bool) {
 	// 从配置文件中读取数据库连接配置
 	host := viper.GetString("dbms.host")
 	port := viper.GetString("dbms.port")
@@ -32,7 +32,7 @@ func InitDB() {
 
 	// 初始化数据库连接池
 	var err error
-	GormDB, err = initDBPool(dsn)
+	GormDB, err = initDBPool(debug, dsn)
 	if err != nil {
 		logger.Fatal("[ FAIL ] init db pool failed: " + err.Error())
 		return
@@ -62,10 +62,19 @@ func InitDB() {
 }
 
 // 初始化数据库连接池
-func initDBPool(dsn string) (*gorm.DB, error) {
+func initDBPool(debug bool, dsn string) (*gorm.DB, error) {
+	var gormLog gormLogger.Interface
+	if debug {
+		// Debug 模式下用详细日志
+		gormLog = gormLogger.Default.LogMode(gormLogger.Info)
+	} else {
+		// Release 模式下禁用日志
+		gormLog = gormLogger.Discard
+	}
+
 	// 连接 Gorm 数据库
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Error),
+		Logger: gormLog,
 	})
 	if err != nil {
 		logger.Error("connect to pg failed: " + err.Error())

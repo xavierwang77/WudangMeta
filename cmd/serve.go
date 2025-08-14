@@ -55,7 +55,7 @@ var serveCmd = &cobra.Command{
 		// 初始化地基模块（顺序不能改变）
 		cmn.InitLogger(debug)
 		cmn.InitConfig()
-		cmn.InitDB()
+		cmn.InitDB(debug)
 		logger := cmn.GetLogger()
 
 		// 初始化公共模块
