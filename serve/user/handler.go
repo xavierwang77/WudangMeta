@@ -18,6 +18,7 @@ import (
 )
 
 type Handler interface {
+	HandleCheckLoginStatue(c *gin.Context)
 	HandleSendSMSCode(c *gin.Context)
 	HandleSMSLogin(c *gin.Context)
 	HandleGetCurrentUserInfo(c *gin.Context)
@@ -33,6 +34,14 @@ func NewHandler() Handler {
 	return &handler{
 		smsSrv: sms.NewService(),
 	}
+}
+
+// HandleCheckIsLogin 检查用户是否已登录
+func (h *handler) HandleCheckLoginStatue(c *gin.Context) {
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "已登录",
+	})
 }
 
 // HandleSendSMSCode 处理发送SMS验证码

@@ -46,6 +46,7 @@ func InitRoutes(r *gin.Engine) {
 		authApi := api.Group("/")
 		authApi.Use(user.AuthMiddleware())
 		{
+			authApi.GET("/login-status", userMgtHandler.HandleCheckLoginStatue)           // 检查用户登录状态
 			authApi.GET("/ubanquan/authentication", ubanquanHandler.HandleAuthentication) // 优版权用户授权
 			authApi.PUT("/ubanquan/asset", ubanquanHandler.HandleUpdateMyAsset)           // 更新优版权用户资产
 			authApi.GET("/points/me", pointsHandler.HandleQueryMyPoints)                  // 获取我的积分
