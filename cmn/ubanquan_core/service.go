@@ -20,7 +20,7 @@ import (
 func UpdateAllUsersAssets(ctx context.Context) ([]*AssetUpdateResult, error) {
 	// 查询所有已绑定优版权账号的用户
 	var userExternals []cmn.TUserExternal
-	err := cmn.GormDB.Where("platform = ? AND open_id != '' AND open_id IS NOT NULL", AssetPlatform).Find(&userExternals).Error
+	err := cmn.GormDB.Where("platform = ? AND open_id != '' AND open_id IS NOT NULL", PlatformName).Find(&userExternals).Error
 	if err != nil {
 		z.Error("failed to query users with ubanquan openId", zap.Error(err))
 		return nil, fmt.Errorf("failed to query users with ubanquan openId: %w", err)
@@ -84,7 +84,7 @@ func UpdateUserAssetByUserId(ctx context.Context, userId uuid.UUID) (*AssetUpdat
 
 	// 获取用户的外部openId
 	var userExternal cmn.TUserExternal
-	err := cmn.GormDB.Where("user_id = ? AND platform = ?", userId, AssetPlatform).First(&userExternal).Error
+	err := cmn.GormDB.Where("user_id = ? AND platform = ?", userId, PlatformName).First(&userExternal).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			z.Error("user external info not found", zap.String("user_id", userId.String()))
@@ -181,14 +181,24 @@ func syncUserAssetsToDatabase(ctx context.Context, userId uuid.UUID, cardResp *U
 			for _, nfrInfo := range assetData.NFRInfoList {
 				// 查找匹配的元资产
 				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, AssetPlatform).First(&metaAsset).Error
+				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, PlatformName).First(&metaAsset).Error
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
-						// 元资产不存在，跳过
-						skippedCount++
-						continue
+						// 元资产不存在，创建新的元资产
+						metaAsset = cmn.TMetaAsset{
+							Name:       assetData.MetaProductName,
+							CoverImg:   assetData.MetaProductImg,
+							ExternalNo: assetData.MetaProductNo,
+							Value:      0,
+							Platform:   PlatformName,
+						}
+						err = tx.Create(&metaAsset).Error
+						if err != nil {
+							return fmt.Errorf("failed to create meta asset: %w", err)
+						}
+					} else {
+						return fmt.Errorf("failed to query meta asset: %w", err)
 					}
-					return fmt.Errorf("failed to query meta asset: %w", err)
 				}
 
 				// 检查用户是否已拥有该资产
@@ -231,114 +241,4 @@ func syncUserAssetsToDatabase(ctx context.Context, userId uuid.UUID, cardResp *U
 	})
 
 	return addedCount, skippedCount, err
-}
-
-// fetchAccessToken 获取访问令牌
-// 向优版权API发送POST请求获取accessToken
-func fetchAccessToken(ctx context.Context, appId string, appSecret string) (*Token, error) {
-	// 构建请求体
-	reqData := map[string]string{
-		"appId":     appId,
-		"appSecret": appSecret,
-	}
-
-	reqBody, err := json.Marshal(reqData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request data: %w", err)
-	}
-
-	// 发送POST请求
-	fastReq := fasthttp.AcquireRequest()
-	fastResp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(fastReq)
-	defer fasthttp.ReleaseResponse(fastResp)
-
-	fastReq.SetRequestURI(fmt.Sprintf("%s/dapp/token", BaseApiUrl))
-	fastReq.Header.SetMethod("POST")
-	fastReq.Header.SetContentType("application/json")
-	fastReq.SetBody(reqBody)
-
-	client := &fasthttp.Client{
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	err = client.Do(fastReq, fastResp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request to ubanquan token API: %w", err)
-	}
-
-	// 解析响应
-	var tokenResp struct {
-		Success bool        `json:"success"`
-		Code    interface{} `json:"code"`
-		Message interface{} `json:"message"`
-		Data    *Token      `json:"data"`
-	}
-
-	err = json.Unmarshal(fastResp.Body(), &tokenResp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal token response: %w", err)
-	}
-
-	// 检查API响应状态
-	if !tokenResp.Success {
-		return nil, fmt.Errorf("ubanquan token API returned error, code: %v, message: %v", tokenResp.Code, tokenResp.Message)
-	}
-
-	if tokenResp.Data == nil {
-		return nil, fmt.Errorf("ubanquan token API returned empty data")
-	}
-
-	return tokenResp.Data, nil
-}
-
-// refreshAccessToken 刷新访问令牌
-// 向优版权API发送GET请求刷新令牌
-func refreshAccessToken(ctx context.Context, refreshToken string) (*Token, error) {
-	// 构建请求URL
-	url := fmt.Sprintf("%s/dapp/flush?refreshToken=%s", BaseApiUrl, refreshToken)
-
-	// 发送GET请求
-	fastReq := fasthttp.AcquireRequest()
-	fastResp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(fastReq)
-	defer fasthttp.ReleaseResponse(fastResp)
-
-	fastReq.SetRequestURI(url)
-	fastReq.Header.SetMethod("GET")
-
-	client := &fasthttp.Client{
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-
-	err := client.Do(fastReq, fastResp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request to ubanquan flush API: %w", err)
-	}
-
-	// 解析响应
-	var tokenResp struct {
-		Success bool        `json:"success"`
-		Code    interface{} `json:"code"`
-		Message interface{} `json:"message"`
-		Data    *Token      `json:"data"`
-	}
-
-	err = json.Unmarshal(fastResp.Body(), &tokenResp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal refresh token response: %w", err)
-	}
-
-	// 检查API响应状态
-	if !tokenResp.Success {
-		return nil, fmt.Errorf("ubanquan flush API returned error, code: %v, message: %v", tokenResp.Code, tokenResp.Message)
-	}
-
-	if tokenResp.Data == nil {
-		return nil, fmt.Errorf("ubanquan flush API returned empty data")
-	}
-
-	return tokenResp.Data, nil
 }

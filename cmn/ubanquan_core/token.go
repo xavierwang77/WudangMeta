@@ -2,9 +2,12 @@ package ubanquan_core
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 )
 
@@ -138,4 +141,114 @@ func reinitializeToken(ctx context.Context) error {
 	setGlobalToken(token)
 
 	return nil
+}
+
+// fetchAccessToken 获取访问令牌
+// 向优版权API发送POST请求获取accessToken
+func fetchAccessToken(ctx context.Context, appId string, appSecret string) (*Token, error) {
+	// 构建请求体
+	reqData := map[string]string{
+		"appId":     appId,
+		"appSecret": appSecret,
+	}
+
+	reqBody, err := json.Marshal(reqData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request data: %w", err)
+	}
+
+	// 发送POST请求
+	fastReq := fasthttp.AcquireRequest()
+	fastResp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(fastReq)
+	defer fasthttp.ReleaseResponse(fastResp)
+
+	fastReq.SetRequestURI(fmt.Sprintf("%s/dapp/token", BaseApiUrl))
+	fastReq.Header.SetMethod("POST")
+	fastReq.Header.SetContentType("application/json")
+	fastReq.SetBody(reqBody)
+
+	client := &fasthttp.Client{
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	err = client.Do(fastReq, fastResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to ubanquan token API: %w", err)
+	}
+
+	// 解析响应
+	var tokenResp struct {
+		Success bool        `json:"success"`
+		Code    interface{} `json:"code"`
+		Message interface{} `json:"message"`
+		Data    *Token      `json:"data"`
+	}
+
+	err = json.Unmarshal(fastResp.Body(), &tokenResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal token response: %w", err)
+	}
+
+	// 检查API响应状态
+	if !tokenResp.Success {
+		return nil, fmt.Errorf("ubanquan token API returned error, code: %v, message: %v", tokenResp.Code, tokenResp.Message)
+	}
+
+	if tokenResp.Data == nil {
+		return nil, fmt.Errorf("ubanquan token API returned empty data")
+	}
+
+	return tokenResp.Data, nil
+}
+
+// refreshAccessToken 刷新访问令牌
+// 向优版权API发送GET请求刷新令牌
+func refreshAccessToken(ctx context.Context, refreshToken string) (*Token, error) {
+	// 构建请求URL
+	url := fmt.Sprintf("%s/dapp/flush?refreshToken=%s", BaseApiUrl, refreshToken)
+
+	// 发送GET请求
+	fastReq := fasthttp.AcquireRequest()
+	fastResp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(fastReq)
+	defer fasthttp.ReleaseResponse(fastResp)
+
+	fastReq.SetRequestURI(url)
+	fastReq.Header.SetMethod("GET")
+
+	client := &fasthttp.Client{
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	err := client.Do(fastReq, fastResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request to ubanquan flush API: %w", err)
+	}
+
+	// 解析响应
+	var tokenResp struct {
+		Success bool        `json:"success"`
+		Code    interface{} `json:"code"`
+		Message interface{} `json:"message"`
+		Data    *Token      `json:"data"`
+	}
+
+	err = json.Unmarshal(fastResp.Body(), &tokenResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal refresh token response: %w", err)
+	}
+
+	// 检查API响应状态
+	if !tokenResp.Success {
+		return nil, fmt.Errorf("ubanquan flush API returned error, code: %v, message: %v", tokenResp.Code, tokenResp.Message)
+	}
+
+	if tokenResp.Data == nil {
+		return nil, fmt.Errorf("ubanquan flush API returned empty data")
+	}
+
+	return tokenResp.Data, nil
 }

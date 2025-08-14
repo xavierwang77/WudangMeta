@@ -34,10 +34,14 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("serve called")
 
+		// 全局唯一的 Gin 实例
+		r := gin.Default()
+
 		switch debug {
 		case true:
 			// 设置 Gin 模式为 Debug
 			gin.SetMode(gin.DebugMode)
+			r.Use(gin.Logger())
 		case false:
 			// 设置 Gin 模式为 Release
 			gin.SetMode(gin.ReleaseMode)
@@ -46,10 +50,6 @@ var serveCmd = &cobra.Command{
 			gin.SetMode(gin.ReleaseMode)
 		}
 
-		// 全局唯一的 Gin 实例
-		r := gin.Default()
-
-		r.Use(gin.Logger())
 		r.Use(gin.Recovery())
 
 		// 初始化地基模块（顺序不能改变）

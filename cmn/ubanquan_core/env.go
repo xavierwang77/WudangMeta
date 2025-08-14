@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	AssetPlatform = "ubanquan" // 资产平台标识
+	PlatformName = "ubanquan" // 资产平台标识
 )
 
 var (

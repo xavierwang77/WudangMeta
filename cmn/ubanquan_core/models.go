@@ -35,6 +35,7 @@ type AssetData struct {
 	NFRInfoList     []NFRInfo `json:"nfrInfoList"`
 	MetaProductName string    `json:"metaProductName"`
 	MetaProductNo   string    `json:"metaProductNo"`
+	MetaProductImg  string    `json:"metaProductImg"`
 }
 
 // UbanquanCardResponse 优版权卡片API响应结构

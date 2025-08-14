@@ -131,12 +131,12 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 	err = cmn.GormDB.Transaction(func(tx *gorm.DB) error {
 		// 查找或创建用户外部信息记录
 		var userExternal cmn.TUserExternal
-		err = tx.Where("user_id = ? AND platform = ?", userId, ubanquan_core.AssetPlatform).First(&userExternal).Error
+		err = tx.Where("user_id = ? AND platform = ?", userId, ubanquan_core.PlatformName).First(&userExternal).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 创建新记录
 				userExternal = cmn.TUserExternal{
-					Platform: ubanquan_core.AssetPlatform,
+					Platform: ubanquan_core.PlatformName,
 					UserId:   userId,
 					OpenId:   ubanquanResp.Data.OpenId,
 					NickName: ubanquanResp.Data.NickName,
@@ -250,32 +250,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 		return
 	}
 
-	// 解析响应
-	type NFRInfo struct {
-		LockTag   int    `json:"lockTag"`
-		CD        int    `json:"cd"`
-		ThemeName string `json:"themeName"`
-		CoverImg  string `json:"coverImg"`
-		Name      string `json:"name"`
-		AuctionNo string `json:"auctionNo"`
-		ProductNo string `json:"productNo"`
-		ThemeKey  string `json:"themeKey"`
-	}
-
-	type AssetData struct {
-		NFRInfoList     []NFRInfo `json:"nfrInfoList"`
-		MetaProductName string    `json:"metaProductName"`
-		MetaProductNo   string    `json:"metaProductNo"`
-	}
-
-	type UbanquanCardResponse struct {
-		Code    interface{} `json:"code"`
-		Data    []AssetData `json:"data"`
-		Message interface{} `json:"message"`
-		Success bool        `json:"success"`
-	}
-
-	var cardResp UbanquanCardResponse
+	var cardResp ubanquan_core.UbanquanCardResponse
 	err = json.Unmarshal(fastResp.Body(), &cardResp)
 	if err != nil {
 		z.Error("failed to unmarshal ubanquan card response", zap.Error(err))
@@ -311,18 +286,32 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 			for _, nfrInfo := range assetData.NFRInfoList {
 				// 查找匹配的元资产
 				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, ubanquan_core.AssetPlatform).First(&metaAsset).Error
+				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, ubanquan_core.PlatformName).First(&metaAsset).Error
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
-						// 元资产不存在，跳过
-						skippedCount++
-						continue
+						// 元资产不存在，创建新的元资产
+						metaAsset = cmn.TMetaAsset{
+							Name:       assetData.MetaProductName,
+							CoverImg:   assetData.MetaProductImg,
+							ExternalNo: assetData.MetaProductNo,
+							Value:      0,
+							Platform:   ubanquan_core.PlatformName,
+						}
+						err = tx.Create(&metaAsset).Error
+						if err != nil {
+							e := fmt.Errorf("failed to create meta asset: %w", err)
+							z.Error(e.Error())
+							status = -1
+							msg = "创建元资产失败"
+							return e
+						}
+					} else {
+						e := fmt.Errorf("failed to query meta asset: %w", err)
+						z.Error(e.Error())
+						status = -1
+						msg = "查询元资产失败"
+						return e
 					}
-					e := fmt.Errorf("failed to query meta asset: %w", err)
-					z.Error(e.Error())
-					status = -1
-					msg = "查询元资产失败"
-					return e
 				}
 
 				// 检查用户是否已拥有该资产
