@@ -28,7 +28,7 @@ func GetGlobalToken() *Token {
 	return &Token{
 		AccessToken:  globalToken.AccessToken,
 		RefreshToken: globalToken.RefreshToken,
-		ExpiresTime:  globalToken.ExpiresTime,
+		ExpireTime:   globalToken.ExpireTime,
 	}
 }
 
@@ -95,7 +95,7 @@ func shouldRefreshToken() bool {
 	}
 
 	// 计算token过期时间（毫秒转换为秒）
-	expiresAt := time.Unix(globalToken.ExpiresTime/1000, 0)
+	expiresAt := time.Unix(globalToken.ExpireTime/1000, 0)
 	// 在过期前5分钟开始刷新
 	refreshTime := expiresAt.Add(-5 * time.Minute)
 

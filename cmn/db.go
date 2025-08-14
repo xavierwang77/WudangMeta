@@ -66,7 +66,7 @@ func initDBPool(debug bool, dsn string) (*gorm.DB, error) {
 	var gormLog gormLogger.Interface
 	if debug {
 		// Debug 模式下用详细日志
-		gormLog = gormLogger.Default.LogMode(gormLogger.Info)
+		gormLog = gormLogger.Default.LogMode(gormLogger.Error)
 	} else {
 		// Release 模式下禁用日志
 		gormLog = gormLogger.Discard

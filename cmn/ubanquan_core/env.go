@@ -50,5 +50,5 @@ func Init() {
 		zap.String("appId", AppId),
 		zap.String("appSecret", AppSecret[:10]+"...)"),
 		zap.String("accessToken", GetGlobalToken().AccessToken[:10]+"...)"),
-		zap.Int64("expiresTime", GetGlobalToken().ExpiresTime))
+		zap.Int64("expiresTime", GetGlobalToken().ExpireTime))
 }

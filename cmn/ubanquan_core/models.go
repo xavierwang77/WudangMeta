@@ -5,7 +5,7 @@ import "github.com/google/uuid"
 type Token struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
-	ExpiresTime  int64  `json:"expiresTime"`
+	ExpireTime   int64  `json:"expireTime"`
 }
 
 // AssetUpdateResult 资产更新结果
