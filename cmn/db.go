@@ -149,7 +149,7 @@ func initView(db *gorm.DB) error {
         ma.cover_img AS meta_cover_img,
         ua.name,
         ua.theme_name,
-        ua.external_id,
+        ua.external_no,
         ua.cover_img,
         ua.created_at,
         ua.updated_at

@@ -18,7 +18,7 @@
     "enable": true,
     "platform": "shx",
     "data": {
-      "template": "【北京启航源科技】您正在登录小程序，验证码为：%s。五分钟内有效，请勿提供给他人。",
+      "template": "【易联网】您正在登录小程序，验证码为：%s。五分钟内有效，请勿提供给他人。",
       "apiUrl": "http://139.159.195.164:8080/edeeserver/sendSMS4Utf8.do",
       "userName": "901488",
       "password": "666666"
@@ -26,8 +26,8 @@
   },
   "ubanquan": {
     "baseApiUrl": "https://test-apimall.ubanquan.cn",
-    "appId": "a7f001fc",
-    "appSecret": "81D55AFE028374929E569F9722A42843"
+    "appId": "4589c335",
+    "appSecret": "EB1B109AB6DF81B29373BE50F461444D"
   },
   "llm": {
     "enable": true,

@@ -173,8 +173,6 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 			return err
 		}
 
-		// 记录每次抽奖的奖品名
-
 		// 多次抽奖
 		for i := int64(0); i < raffleCount; i++ {
 			var selectedPrizeName string

@@ -151,7 +151,7 @@ type TMetaAsset struct {
 	Id         int64   `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`            // 元资产ID
 	Name       string  `json:"name" gorm:"column:name;type:text;not null;unique;index"`             // 元资产名称
 	CoverImg   string  `json:"coverImg" gorm:"column:cover_img;type:text"`                          // 元资产图片
-	ExternalNo string  `json:"externalNo" gorm:"column:external_id;type:text"`                      // 元资产外部编号
+	ExternalNo string  `json:"externalNo" gorm:"column:external_no;type:text"`                      // 元资产外部编号
 	Value      float64 `json:"value" gorm:"column:value;type:float"`                                // 元资产价值
 	Platform   string  `json:"platform" gorm:"column:platform;type:text"`                           // 元资产所属平台
 	CreatedAt  int64   `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
@@ -169,7 +169,7 @@ type TUserAsset struct {
 	MetaAssetId int64     `gorm:"column:meta_asset_id;type:bigint;not null;index"`    // 元资产ID
 	Name        string    `gorm:"column:name;type:text;not null;index"`               // 资产名称
 	ThemeName   string    `gorm:"column:theme_name;type:text"`                        // 资产主题名称
-	ExternalNo  string    `gorm:"column:external_id;type:text"`                       // 资产外部编号
+	ExternalNo  string    `gorm:"column:external_no;type:text"`                       // 资产外部编号
 	CoverImg    string    `gorm:"column:cover_img;type:text"`                         // 资产图片
 	CreatedAt   int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
 	UpdatedAt   int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
@@ -254,7 +254,7 @@ type VUserAssetMeta struct {
 	MetaCoverImg   string    `json:"metaCoverImg" gorm:"column:meta_cover_img"`
 	Name           string    `json:"name" gorm:"column:name"`
 	ThemeName      string    `json:"themeName" gorm:"column:theme_name"`
-	ExternalNo     string    `json:"externalNo" gorm:"column:external_id"`
+	ExternalNo     string    `json:"externalNo" gorm:"column:external_no"`
 	CoverImg       string    `json:"coverImg" gorm:"column:cover_img"`
 	CreatedAt      int64     `json:"createdAt" gorm:"column:created_at"`
 	UpdatedAt      int64     `json:"updatedAt" gorm:"column:updated_at"`
