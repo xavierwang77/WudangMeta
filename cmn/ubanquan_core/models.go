@@ -20,14 +20,16 @@ type AssetUpdateResult struct {
 
 // NFRInfo 优版权NFR信息结构
 type NFRInfo struct {
-	LockTag   int    `json:"lockTag"`
-	CD        int    `json:"cd"`
-	ThemeName string `json:"themeName"`
-	CoverImg  string `json:"coverImg"`
-	Name      string `json:"name"`
-	AuctionNo string `json:"auctionNo"`
-	ProductNo string `json:"productNo"`
-	ThemeKey  string `json:"themeKey"`
+	LockTag         int    `json:"lockTag"`
+	CD              int    `json:"cd"`
+	ThemeName       string `json:"themeName"`
+	CoverImg        string `json:"coverImg"`
+	Name            string `json:"name"`
+	AuctionNo       string `json:"auctionNo"`
+	ProductNo       string `json:"productNo"`
+	ThemeKey        string `json:"themeKey"`
+	MetaProductName string `json:"metaProductName"`
+	MetaProductNo   string `json:"metaProductNo"`
 }
 
 // AssetData 资产数据结构

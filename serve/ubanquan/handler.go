@@ -15,6 +15,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Handler interface {
@@ -284,81 +285,74 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 		// 遍历资产数据
 		for _, assetData := range cardResp.Data {
 			for _, nfrInfo := range assetData.NFRInfoList {
-				// 查找匹配的元资产
-				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, ubanquan_core.PlatformName).First(&metaAsset).Error
-				if err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						// 元资产不存在，创建新的元资产
-						metaAsset = cmn.TMetaAsset{
-							Name:       assetData.MetaProductName,
-							CoverImg:   assetData.MetaProductImg,
-							ExternalNo: assetData.MetaProductNo,
-							Value:      0,
-							Platform:   ubanquan_core.PlatformName,
-						}
-						err = tx.Create(&metaAsset).Error
-						if err != nil {
-							e := fmt.Errorf("failed to create meta asset: %w", err)
-							z.Error(e.Error())
-							status = -1
-							msg = "创建元资产失败"
-							return e
-						}
-					} else {
-						e := fmt.Errorf("failed to query meta asset: %w", err)
-						z.Error(e.Error())
-						status = -1
-						msg = "查询元资产失败"
-						return e
-					}
+				// 使用OnConflict插入元资产
+				metaAsset := cmn.TMetaAsset{
+					Name:       assetData.MetaProductName,
+					CoverImg:   assetData.MetaProductImg,
+					ExternalNo: assetData.MetaProductNo,
+					Value:      0,
+					Platform:   ubanquan_core.PlatformName,
 				}
-
-				// 检查用户是否已拥有该资产
-				var existingUserAsset cmn.TUserAsset
-				err = tx.Where("user_id = ? AND meta_asset_id = ? AND external_no = ?",
-					userId, metaAsset.Id, nfrInfo.ProductNo).First(&existingUserAsset).Error
-				if err == nil {
-					// 资产已存在，跳过
-					skippedCount++
-					continue
-				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-					e := fmt.Errorf("failed to query existing user asset: %w", err)
+				err = tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "name"}, {Name: "platform"}},
+					DoNothing: true,
+				}).Create(&metaAsset).Error
+				if err != nil {
+					e := fmt.Errorf("failed to insert meta asset with OnConflict: %w", err)
 					z.Error(e.Error())
 					status = -1
-					msg = "查询用户是否已拥有资产失败"
+					msg = "插入元资产失败"
 					return e
 				}
 
-				// 创建新的用户资产记录
+				// 查询元资产获取ID
+				var queryMetaAsset cmn.TMetaAsset
+				err = tx.Where("name = ? AND platform = ?", assetData.MetaProductName, ubanquan_core.PlatformName).First(&queryMetaAsset).Error
+				if err != nil {
+					e := fmt.Errorf("failed to query meta asset after insert: %w", err)
+					z.Error(e.Error())
+					status = -1
+					msg = "查询元资产失败"
+					return e
+				}
+
+				// 使用OnConflict插入用户资产
 				userAsset := cmn.TUserAsset{
 					UserId:      userId,
-					MetaAssetId: metaAsset.Id,
+					MetaAssetId: queryMetaAsset.Id,
 					Name:        nfrInfo.Name,
 					ThemeName:   nfrInfo.ThemeName,
 					ExternalNo:  nfrInfo.ProductNo,
 					CoverImg:    nfrInfo.CoverImg,
 				}
 
-				err = tx.Create(&userAsset).Error
-				if err != nil {
-					e := fmt.Errorf("failed to create user asset: %w, user_id: %s", err, userId.String())
+				result := tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "user_id"}, {Name: "meta_asset_id"}, {Name: "external_no"}},
+					DoNothing: true,
+				}).Create(&userAsset)
+				if result.Error != nil {
+					e := fmt.Errorf("failed to insert user asset with OnConflict: %w, user_id: %s", result.Error, userId.String())
 					z.Error(e.Error())
 					status = -1
-					msg = "创建用户资产失败"
+					msg = "插入用户资产失败"
 					return e
 				}
 
-				// 给用户增加该资产积分
-				err = points_core.AddUserPointsByAsset(c, tx, userId, metaAsset.Id, 1)
-				if err != nil {
-					e := fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), metaAsset.Id)
-					status = -1
-					msg = "添加用户积分失败"
-					return e
+				// 检查是否为新插入的记录
+				if result.RowsAffected > 0 {
+					// 给用户增加该资产积分
+					err = points_core.AddUserPointsByAsset(c, tx, userId, queryMetaAsset.Id, 1)
+					if err != nil {
+						e := fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), queryMetaAsset.Id)
+						status = -1
+						msg = "添加用户积分失败"
+						return e
+					}
+					addedCount++
+				} else {
+					// 资产已存在，跳过
+					skippedCount++
 				}
-
-				addedCount++
 			}
 		}
 		return nil

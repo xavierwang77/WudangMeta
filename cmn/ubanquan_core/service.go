@@ -13,6 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // UpdateAllUsersAssets 遍历所有已绑定openId的用户，批量更新他们的优版权资产
@@ -179,53 +180,52 @@ func syncUserAssetsToDatabase(ctx context.Context, userId uuid.UUID, cardResp *U
 		// 遍历资产数据
 		for _, assetData := range cardResp.Data {
 			for _, nfrInfo := range assetData.NFRInfoList {
-				// 查找匹配的元资产
-				var metaAsset cmn.TMetaAsset
-				err = tx.Where("name = ? AND platform = ?", nfrInfo.ThemeName, PlatformName).First(&metaAsset).Error
+				// 使用OnConflict插入元资产
+				metaAsset := cmn.TMetaAsset{
+					Name:       assetData.MetaProductName,
+					CoverImg:   assetData.MetaProductImg,
+					ExternalNo: assetData.MetaProductNo,
+					Value:      0,
+					Platform:   PlatformName,
+				}
+				err = tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "name"}, {Name: "platform"}},
+					DoNothing: true,
+				}).Create(&metaAsset).Error
 				if err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						// 元资产不存在，创建新的元资产
-						metaAsset = cmn.TMetaAsset{
-							Name:       assetData.MetaProductName,
-							CoverImg:   assetData.MetaProductImg,
-							ExternalNo: assetData.MetaProductNo,
-							Value:      0,
-							Platform:   PlatformName,
-						}
-						err = tx.Create(&metaAsset).Error
-						if err != nil {
-							return fmt.Errorf("failed to create meta asset: %w", err)
-						}
-					} else {
-						return fmt.Errorf("failed to query meta asset: %w", err)
-					}
+					return fmt.Errorf("failed to insert meta asset with OnConflict: %w", err)
 				}
 
-				// 检查用户是否已拥有该资产
-				var existingUserAsset cmn.TUserAsset
-				err = tx.Where("user_id = ? AND meta_asset_id = ? AND external_no = ?",
-					userId, metaAsset.Id, nfrInfo.ProductNo).First(&existingUserAsset).Error
-				if err == nil {
-					// 资产已存在，跳过
-					skippedCount++
-					continue
-				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-					return fmt.Errorf("failed to query existing user asset: %w", err)
+				// 查询元资产获取ID
+				var queryMetaAsset cmn.TMetaAsset
+				err = tx.Where("name = ? AND platform = ?", assetData.MetaProductName, PlatformName).First(&queryMetaAsset).Error
+				if err != nil {
+					return fmt.Errorf("failed to query meta asset after insert: %w", err)
 				}
 
-				// 创建新的用户资产记录
+				// 使用OnConflict插入用户资产
 				userAsset := cmn.TUserAsset{
 					UserId:      userId,
-					MetaAssetId: metaAsset.Id,
+					MetaAssetId: queryMetaAsset.Id,
 					Name:        nfrInfo.Name,
 					ThemeName:   nfrInfo.ThemeName,
 					ExternalNo:  nfrInfo.ProductNo,
 					CoverImg:    nfrInfo.CoverImg,
 				}
 
-				err = tx.Create(&userAsset).Error
-				if err != nil {
-					return fmt.Errorf("failed to create user asset: %w, user_id: %s", err, userId.String())
+				result := tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "user_id"}, {Name: "meta_asset_id"}, {Name: "external_no"}},
+					DoNothing: true,
+				}).Create(&userAsset)
+				if result.Error != nil {
+					return fmt.Errorf("failed to insert user asset with OnConflict: %w", result.Error)
+				}
+
+				// 检查是否为新插入的记录，如果是则继续处理
+				if result.RowsAffected == 0 {
+					// 资产已存在，跳过
+					skippedCount++
+					continue
 				}
 
 				// 给用户增加该资产积分
