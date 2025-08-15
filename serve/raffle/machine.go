@@ -138,7 +138,7 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 		return []string{}, nil
 	}
 
-	var results []string
+	var prizesWon []string
 
 	err := cmn.GormDB.Transaction(func(tx *gorm.DB) error {
 		// 查询用户积分是否足够抽奖
@@ -163,26 +163,76 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 		}
 		remainPoints := userPoints - float64(m.consumePointsValue)*float64(raffleCount)
 
+		// 检查是否有指定获奖记录
+		var designatedPrizes []cmn.VRaffleDesignatedUserPrizeInfo
+		err = tx.Model(&cmn.VRaffleDesignatedUserPrizeInfo{}).
+			Where("user_id = ?", userId).
+			Find(&designatedPrizes).Error
+		if err != nil {
+			z.Error("failed to query designated prizes", zap.Error(err), zap.String("user_id", userId.String()))
+			return err
+		}
+
 		// 记录每次抽奖的奖品名
-		var prizesWon []string
 
 		// 多次抽奖
 		for i := int64(0); i < raffleCount; i++ {
-			// 根据概率选择奖品
-			choices := m.buildRafflePoolByProbability()
-			chooser, err := weightedrand.NewChooser(choices...)
-			if err != nil {
-				e := fmt.Errorf("failed to create chooser: %w", err)
-				z.Error(e.Error())
-				return e
+			var selectedPrizeName string
+			var selectedPrize *cmn.TRafflePrize
+
+			// 如果有指定获奖记录且还有未使用的，优先使用指定奖品
+			if len(designatedPrizes) > 0 {
+				// 使用第一个指定奖品
+				designatedPrize := designatedPrizes[0]
+				selectedPrizeName = designatedPrize.PrizeName
+
+				// 从奖池中找到对应的奖品信息
+				for _, prize := range prizes {
+					if prize.Name == selectedPrizeName {
+						selectedPrize = &prize
+						break
+					}
+				}
+
+				// 删除已使用的指定获奖记录
+				err = tx.Delete(&cmn.TRaffleDesignatedUser{}, designatedPrize.Id).Error
+				if err != nil {
+					z.Error("failed to delete designated user record", zap.Error(err), zap.Int64("id", designatedPrize.Id))
+					return err
+				}
+
+				// 从列表中移除已使用的记录
+				designatedPrizes = designatedPrizes[1:]
+			} else {
+				// 没有指定奖品，执行正常的随机抽奖
+				choices := m.buildRafflePoolByProbability()
+				chooser, err := weightedrand.NewChooser(choices...)
+				if err != nil {
+					e := fmt.Errorf("failed to create chooser: %w", err)
+					z.Error(e.Error())
+					return e
+				}
+
+				selectedPrizeName = chooser.Pick()
+
+				// 查找对应的奖品信息
+				if selectedPrizeName != noPrizeSign {
+					for _, prize := range prizes {
+						if prize.Name == selectedPrizeName {
+							selectedPrize = &prize
+							break
+						}
+					}
+				}
 			}
 
-			selectedPrizeName := chooser.Pick()
+			// 记录中奖奖品
 			if selectedPrizeName != noPrizeSign {
 				prizesWon = append(prizesWon, selectedPrizeName)
 			}
 
 			// 扣除用户积分
+			remainPoints -= float64(m.consumePointsValue)
 			err = tx.Model(&cmn.TUserPoints{}).
 				Where("user_id = ?", userId).
 				Update(m.consumePointsKey, remainPoints).Error
@@ -190,17 +240,6 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 				e := fmt.Errorf("failed to deduct user points: %w", err)
 				z.Error(e.Error())
 				return e
-			}
-
-			// 查找对应的奖品信息
-			var selectedPrize *cmn.TRafflePrize
-			if selectedPrizeName != noPrizeSign {
-				for _, prize := range prizes {
-					if prize.Name == selectedPrizeName {
-						selectedPrize = &prize
-						break
-					}
-				}
 			}
 
 			// 如果中奖（不是 noPrizeSign），则更新奖品剩余数量
@@ -268,5 +307,5 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 	}
 
 	// 返回所有中奖的奖品名
-	return results, nil
+	return prizesWon, nil
 }

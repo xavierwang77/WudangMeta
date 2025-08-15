@@ -403,6 +403,26 @@ func (h *handler) HandleCreatePrize(c *gin.Context) {
 		return
 	}
 
+	// 检查新增奖品后总概率是否超过1
+	var totalProbability float64
+	if err := cmn.GormDB.Model(&cmn.TRafflePrize{}).Select("COALESCE(SUM(probability), 0)").Scan(&totalProbability).Error; err != nil {
+		z.Error("failed to calculate total probability", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "计算总概率失败",
+		})
+		return
+	}
+
+	// 检查新增奖品后是否超过概率上限
+	if totalProbability+newPrize.Probability > 1.0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    fmt.Sprintf("新增奖品后总概率将超过1.0，当前总概率：%.4f，新奖品概率：%.4f", totalProbability, newPrize.Probability),
+		})
+		return
+	}
+
 	// 创建新奖品
 	if err := cmn.GormDB.Create(&newPrize).Error; err != nil {
 		z.Error("failed to create prize", zap.Error(err))
