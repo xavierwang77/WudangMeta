@@ -161,7 +161,7 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 			z.Sugar().Error("insufficient points for user_id %s, current points: %.2f, required: %d", userId.String(), userPoints, m.consumePointsValue*raffleCount)
 			return fmt.Errorf("您的积分不足，无法进行抽奖\n当前积分：%.2f，抽奖所需积分：%d", userPoints, m.consumePointsValue*raffleCount)
 		}
-		remainPoints := userPoints - float64(m.consumePointsValue)*float64(raffleCount)
+		remainPoints := userPoints
 
 		// 检查是否有指定获奖记录
 		var designatedPrizes []cmn.VRaffleDesignatedUserPrizeInfo
