@@ -41,6 +41,9 @@ func InitRoutes(r *gin.Engine) {
 		api.GET("/asset/meta", assetHandler.HandleQueryMetaAssets)                        // 查询元数据资产
 		api.POST("/ranking/list", rankingHandler.HandleQueryRankingList)                  // 查询排行榜列表
 		api.GET("/asset", assetHandler.HandleQueryUserAssetsByPhone)                      // 根据手机号查询用户资产
+		api.GET("/raffle/designated-user", raffleHandler.HandleQueryDesignatedUsers)      // 查询指定用户的抽奖信息
+		api.POST("/raffle/designated-user", raffleHandler.HandleCreateDesignatedUser)     // 新增指定用户抽奖信息
+		api.DELETE("/raffle/designated-user", raffleHandler.HandleDeleteDesignatedUsers)  // 删除指定用户抽奖信息
 
 		// 需要认证的路由组
 		authApi := api.Group("/")

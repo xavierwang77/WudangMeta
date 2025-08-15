@@ -12,9 +12,10 @@ const (
 
 	TUserPointsName = "t_user_points" // 用户积分表
 
-	TRaffleWinnersName = "t_raffle_winner" // 抽奖获奖者表
-	TRaffleLogName     = "t_raffle_log"    // 抽奖日志表
-	TRafflePrizeName   = "t_raffle_prize"  // 抽奖奖品表
+	TRaffleWinnersName        = "t_raffle_winner"          // 抽奖获奖者表
+	TRaffleDesignatedUserName = "t_raffle_designated_user" // 抽奖指定获奖者表
+	TRaffleLogName            = "t_raffle_log"             // 抽奖日志表
+	TRafflePrizeName          = "t_raffle_prize"           // 抽奖奖品表
 
 	TMetaAssetName = "t_meta_asset" // 元资产表
 	TUserAssetName = "t_user_asset" // 用户资产表
@@ -25,9 +26,10 @@ const (
 	TUserFortuneName = "t_user_fortune"  // 用户运势表
 	TUserCheckInName = "t_user_check_in" // 用户签到表
 
-	VUserAssetMetaName    = "v_user_asset_meta"    // 用户资产视图
-	VUserInfoName         = "v_user_info"          // 用户信息视图
-	VRaffleWinnerInfoName = "v_raffle_winner_info" // 抽奖获奖者信息视图
+	VUserAssetMetaName                 = "v_user_asset_meta"                   // 用户资产视图
+	VUserInfoName                      = "v_user_info"                         // 用户信息视图
+	VRaffleWinnerInfoName              = "v_raffle_winner_info"                // 抽奖获奖者信息视图
+	VRaffleDesignatedUserPrizeInfoName = "v_raffle_designated_user_prize_info" // 抽奖指定获奖者奖品信息视图
 )
 
 // TUser 用户信息表
@@ -112,6 +114,22 @@ type TRaffleLog struct {
 
 func (TRaffleLog) TableName() string {
 	return TRaffleLogName
+}
+
+// TRaffleDesignatedUser 抽奖指定获奖者表
+type TRaffleDesignatedUser struct {
+	Id        int64     `gorm:"column:id;type:bigint;primaryKey;autoIncrement"`     // ID
+	UserId    uuid.UUID `gorm:"column:user_id;type:uuid;not null"`                  // 用户ID
+	PrizeId   int64     `gorm:"column:prize_id;type:bigint;not null"`               // 奖品ID
+	CreatedAt int64     `gorm:"column:created_at;type:bigint;autoCreateTime:milli"` // 创建时间
+	UpdatedAt int64     `gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"` // 更新时间
+
+	UserInfo  TUser        `gorm:"foreignKey:UserId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`  // 用户信息
+	PrizeInfo TRafflePrize `gorm:"foreignKey:PrizeId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"` // 奖品信息
+}
+
+func (TRaffleDesignatedUser) TableName() string {
+	return TRaffleDesignatedUserName
 }
 
 // TSmsCodes 短信验证码表
@@ -289,4 +307,25 @@ type VRaffleWinnerInfo struct {
 
 func (VRaffleWinnerInfo) TableName() string {
 	return VRaffleWinnerInfoName
+}
+
+// VRaffleDesignatedUserPrizeInfo 抽奖指定获奖者奖品信息视图
+type VRaffleDesignatedUserPrizeInfo struct {
+	Id             int64     `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`                       // ID
+	UserId         uuid.UUID `json:"userId" gorm:"column:user_id;type:uuid;not null"`                                // 用户ID
+	PrizeId        int64     `json:"prizeId" gorm:"column:prize_id;type:bigint;not null"`                            // 奖品ID
+	CreatedAt      int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"`            // 创建时间
+	UpdatedAt      int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"`            // 更新时间
+	Name           string    `json:"name" gorm:"column:name;type:varchar(100);not null;index"`                       // 奖品名称
+	Probability    float64   `json:"probability" gorm:"column:probability;type:float;not null"`                      // 奖品概率
+	TotalCount     int64     `json:"totalCount" gorm:"column:total_count;type:bigint;not null"`                      // 奖品总数
+	RemainCount    int64     `json:"remainCount" gorm:"column:remain_count;type:bigint;not null"`                    // 剩余奖品数量
+	Cost           float64   `json:"cost" gorm:"column:cost;type:float;not null"`                                    // 奖品成本
+	Status         string    `json:"status" gorm:"column:status;type:varchar(5)"`                                    // 奖品状态 00:启用 02:禁用
+	PrizeCreatedAt int64     `json:"prizeCreatedAt" gorm:"column:prize_created_at;type:bigint;autoCreateTime:milli"` // 奖品创建时间
+	PrizeUpdatedAt int64     `json:"prizeUpdatedAt" gorm:"column:prize_updated_at;type:bigint;autoUpdateTime:milli"` // 奖品更新时间
+}
+
+func (VRaffleDesignatedUserPrizeInfo) TableName() string {
+	return VRaffleDesignatedUserPrizeInfoName
 }

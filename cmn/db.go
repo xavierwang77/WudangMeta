@@ -117,6 +117,7 @@ func initTable(db *gorm.DB) error {
 		&TRaffleWinners{},
 		&TRaffleLog{},
 		&TRafflePrize{},
+		&TRaffleDesignatedUser{},
 		&TMetaAsset{},
 		&TUserAsset{},
 		&TUserFortune{},
@@ -233,6 +234,37 @@ func initView(db *gorm.DB) error {
 	)
 	if err != nil {
 		logger.Error("create v_raffle_winner_info failed: " + err.Error())
+		return err
+	}
+
+	// 创建 v_raffle_designated_user_prize_info 视图
+	// 构造查询，连接抽奖指定获奖者表和抽奖奖品表
+	raffleDesignatedUserPrizeInfoQuery := db.
+		Table("t_raffle_designated_user AS rdu").
+		Select(`
+        rdu.id,
+        rdu.user_id,
+        rdu.prize_id,
+        rdu.created_at,
+        rdu.updated_at,
+        rp.name,
+        rp.probability,
+        rp.total_count,
+        rp.remain_count,
+        rp.cost,
+        rp.status,
+        rp.created_at AS prize_created_at,
+        rp.updated_at AS prize_updated_at
+    `).
+		Joins("LEFT JOIN t_raffle_prize AS rp ON rdu.prize_id = rp.id")
+
+	// 创建 v_raffle_designated_user_prize_info 视图
+	err = db.Migrator().CreateView(
+		VRaffleDesignatedUserPrizeInfo{}.TableName(),
+		gorm.ViewOption{Query: raffleDesignatedUserPrizeInfoQuery},
+	)
+	if err != nil {
+		logger.Error("create v_raffle_designated_user_prize_info failed: " + err.Error())
 		return err
 	}
 

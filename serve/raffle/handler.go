@@ -24,6 +24,9 @@ type Handler interface {
 	HandleUpdateConsumePoints(c *gin.Context)
 	HandleQueryConsumePoints(c *gin.Context)
 	HandleDeletePrizes(c *gin.Context)
+	HandleCreateDesignatedUser(c *gin.Context)
+	HandleDeleteDesignatedUsers(c *gin.Context)
+	HandleQueryDesignatedUsers(c *gin.Context)
 }
 
 type handler struct {
@@ -837,5 +840,283 @@ func (h *handler) HandleDeletePrizes(c *gin.Context) {
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    fmt.Sprintf("成功删除%d个奖品", result.RowsAffected),
+	})
+}
+
+// HandleCreateDesignatedUser 创建抽奖指定获奖用户
+func (h *handler) HandleCreateDesignatedUser(c *gin.Context) {
+	// 解析请求体
+	var req cmn.ReqProto
+	if err := c.ShouldBind(&req); err != nil {
+		z.Error("failed to bind request", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体格式错误",
+		})
+		return
+	}
+
+	var requestData struct {
+		MobilePhone string `json:"mobilePhone"`
+		PrizeId     int64  `json:"prizeId"`
+	}
+	if err := json.Unmarshal(req.Data, &requestData); err != nil {
+		z.Error("failed to unmarshal request data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体data字段格式错误",
+		})
+		return
+	}
+
+	// 验证必要字段
+	if requestData.MobilePhone == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "用户手机号不能为空",
+		})
+		return
+	}
+
+	if requestData.PrizeId <= 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "奖品ID不能为空",
+		})
+		return
+	}
+
+	// 根据手机号查询用户
+	var u cmn.TUser
+	if err := cmn.GormDB.First(&u, "mobile_phone = ?", requestData.MobilePhone).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, gin.H{
+				"status": 1,
+				"msg":    "用户不存在",
+			})
+		} else {
+			z.Error("failed to query user by mobile phone", zap.Error(err))
+			c.JSON(http.StatusOK, gin.H{
+				"status": -1,
+				"msg":    "查询用户失败",
+			})
+		}
+		return
+	}
+
+	// 检查奖品是否存在
+	var prize cmn.TRafflePrize
+	if err := cmn.GormDB.First(&prize, "id = ?", requestData.PrizeId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, gin.H{
+				"status": 1,
+				"msg":    "奖品不存在",
+			})
+		} else {
+			z.Error("failed to query prize", zap.Error(err))
+			c.JSON(http.StatusOK, gin.H{
+				"status": -1,
+				"msg":    "查询奖品失败",
+			})
+		}
+		return
+	}
+
+	// 检查是否已存在相同的指定获奖用户记录
+	var existingRecord cmn.TRaffleDesignatedUser
+	if err := cmn.GormDB.Where("user_id = ? AND prize_id = ?", u.Id, requestData.PrizeId).First(&existingRecord).Error; err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "该用户已被指定为此奖品的获奖者",
+		})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		z.Error("failed to check existing designated user", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "检查指定获奖用户失败",
+		})
+		return
+	}
+
+	// 创建指定获奖用户记录
+	createData := cmn.TRaffleDesignatedUser{
+		UserId:  u.Id,
+		PrizeId: requestData.PrizeId,
+	}
+	if err := cmn.GormDB.Create(&createData).Error; err != nil {
+		z.Error("failed to create designated user", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "创建指定获奖用户失败",
+		})
+		return
+	}
+
+	// 将创建的数据转换为JSON
+	createdDataJSON, err := json.Marshal(createData)
+	if err != nil {
+		z.Error("failed to marshal created data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "数据序列化失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    "指定获奖用户创建成功",
+		Data:   createdDataJSON,
+	})
+}
+
+// HandleDeleteDesignatedUsers 批量删除抽奖指定获奖用户
+func (h *handler) HandleDeleteDesignatedUsers(c *gin.Context) {
+	// 解析请求体
+	var req cmn.ReqProto
+	if err := c.ShouldBind(&req); err != nil {
+		z.Error("failed to bind request", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体格式错误",
+		})
+		return
+	}
+
+	var deleteData struct {
+		Ids []int64 `json:"ids"`
+	}
+	if err := json.Unmarshal(req.Data, &deleteData); err != nil {
+		z.Error("failed to unmarshal request data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "请求体data字段格式错误",
+		})
+		return
+	}
+
+	// 验证参数
+	if len(deleteData.Ids) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "ID列表不能为空",
+		})
+		return
+	}
+
+	// 限制批量删除数量
+	if len(deleteData.Ids) > 100 {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "单次最多删除100条记录",
+		})
+		return
+	}
+
+	// 检查记录是否存在
+	var existingRecords []cmn.TRaffleDesignatedUser
+	if err := cmn.GormDB.Where("id IN ?", deleteData.Ids).Find(&existingRecords).Error; err != nil {
+		z.Error("failed to query existing designated users", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询指定获奖用户失败",
+		})
+		return
+	}
+
+	// 检查是否所有记录都存在
+	if len(existingRecords) != len(deleteData.Ids) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": 1,
+			"msg":    "部分记录不存在",
+		})
+		return
+	}
+
+	// 批量删除记录
+	result := cmn.GormDB.Where("id IN ?", deleteData.Ids).Delete(&cmn.TRaffleDesignatedUser{})
+	if result.Error != nil {
+		z.Error("failed to delete designated users", zap.Error(result.Error))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "删除指定获奖用户失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status: 0,
+		Msg:    fmt.Sprintf("成功删除%d条指定获奖用户记录", result.RowsAffected),
+	})
+}
+
+// HandleQueryDesignatedUsers 分页查询抽奖指定获奖用户
+func (h *handler) HandleQueryDesignatedUsers(c *gin.Context) {
+	// 获取分页参数
+	pageStr := c.Query("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	sizeStr := c.Query("pageSize")
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil || size < 1 {
+		size = 10
+	}
+
+	// 限制每页最大数量
+	if size > 100 {
+		size = 100
+	}
+
+	// 计算偏移量
+	offset := (page - 1) * size
+
+	// 查询指定获奖用户信息
+	var designatedUsers []cmn.VRaffleDesignatedUserPrizeInfo
+	var total int64
+
+	// 先查询总数
+	if err := cmn.GormDB.Model(&cmn.VRaffleDesignatedUserPrizeInfo{}).Count(&total).Error; err != nil {
+		z.Error("failed to count designated users", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询指定获奖用户总数失败",
+		})
+		return
+	}
+
+	// 分页查询数据，按创建时间倒序排列
+	if err = cmn.GormDB.Model(&cmn.VRaffleDesignatedUserPrizeInfo{}).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(size).
+		Find(&designatedUsers).Error; err != nil {
+		z.Error("failed to query designated users", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "查询指定获奖用户信息失败",
+		})
+		return
+	}
+
+	// 将响应数据转换为JSON
+	designatedUsersJSON, err := json.Marshal(designatedUsers)
+	if err != nil {
+		z.Error("failed to marshal response data", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    "数据序列化失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, cmn.ReplyProto{
+		Status:   0,
+		Msg:      "success",
+		Data:     designatedUsersJSON,
+		RowCount: total,
 	})
 }
