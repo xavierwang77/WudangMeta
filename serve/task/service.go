@@ -93,9 +93,30 @@ func AnalyzeAndSaveFortune(ctx context.Context, db *gorm.DB, userId uuid.UUID, n
 		return Fortune{}, 0, err
 	}
 
-	// 检查用户是否存在运势记录
-	exist, err := CheckUserFortuneExist(ctx, userId)
+	// 检查用户今天是否已经分析过运势
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	todayStartMilli := todayStart.UnixMilli()
+	tomorrowStart := todayStart.AddDate(0, 0, 1)
+	tomorrowStartMilli := tomorrowStart.UnixMilli()
+	var todayRowCount int64
+	err = cmn.GormDB.Model(&cmn.TUserFortune{}).
+		Where("user_id = ? AND updated_at >= ? AND updated_at < ?", userId, todayStartMilli, tomorrowStartMilli).
+		Count(&todayRowCount).Error
 	if err != nil {
+		e := fmt.Errorf("failed to check user today fortune: %w", err)
+		z.Error(e.Error(), zap.String("userId", userId.String()))
+		return Fortune{}, 0, err
+	}
+
+	// 检查用户是否存在运势记录（用于判断是插入还是更新）
+	var anyTimeRowCount int64
+	err = cmn.GormDB.Model(&cmn.TUserFortune{}).
+		Where("user_id = ?", userId).
+		Count(&anyTimeRowCount).Error
+	if err != nil {
+		e := fmt.Errorf("failed to check user luck tendency: %w", err)
+		z.Error(e.Error(), zap.String("userId", userId.String()))
 		return Fortune{}, 0, err
 	}
 
@@ -106,27 +127,32 @@ func AnalyzeAndSaveFortune(ctx context.Context, db *gorm.DB, userId uuid.UUID, n
 		Birth:  birth,
 	}
 
-	if exist {
+	var addedPoints float64 = 0
+
+	if anyTimeRowCount > 0 {
 		// 更新用户的运势记录
 		err = UpdateFortune(ctx, db, userData, fortune)
 		if err != nil {
 			return Fortune{}, 0, err
 		}
-		return fortune, 0, nil
+	} else {
+		// 增加用户的运势记录
+		err = InsertFortune(ctx, db, userData, fortune)
+		if err != nil {
+			return Fortune{}, 0, err
+		}
 	}
 
-	// 增加用户的运势记录
-	err = InsertFortune(ctx, db, userData, fortune)
-	if err != nil {
-		return Fortune{}, 0, err
-	}
-	// 增加用户积分
-	err = points_core.AddUserPoints(ctx, db, userId, luckTendencyScore)
-	if err != nil {
-		return Fortune{}, 0, err
+	// 只有当天第一次分析运势才增加积分
+	if todayRowCount == 0 {
+		err = points_core.AddUserPoints(ctx, db, userId, luckTendencyScore)
+		if err != nil {
+			return Fortune{}, 0, err
+		}
+		addedPoints = luckTendencyScore
 	}
 
-	return fortune, luckTendencyScore, nil
+	return fortune, addedPoints, nil
 }
 
 // InsertFortune 插入用户运势倾向记录
@@ -221,25 +247,4 @@ func RefreshAllUsersFortune(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// CheckUserFortuneExist 检查用户是否有运势倾向记录
-func CheckUserFortuneExist(ctx context.Context, userId uuid.UUID) (bool, error) {
-	if userId == uuid.Nil {
-		e := fmt.Errorf("userId is empty")
-		z.Error(e.Error())
-		return false, e
-	}
-
-	var count int64
-	err := cmn.GormDB.Model(&cmn.TUserFortune{}).
-		Where("user_id = ?", userId).
-		Count(&count).Error
-	if err != nil {
-		e := fmt.Errorf("failed to check user luck tendency: %w", err)
-		z.Error(e.Error(), zap.String("userId", userId.String()))
-		return false, e
-	}
-
-	return count > 0, nil
 }

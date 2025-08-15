@@ -2,15 +2,10 @@ package task
 
 import (
 	"WudangMeta/cmn"
-	"context"
 	"fmt"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-)
-
-const (
-	maxPageSize = 100 // 最大分页大小
 )
 
 var z *zap.Logger
@@ -47,8 +42,8 @@ func Init() {
 		z.Fatal("[ FAIL ] failed to init llmPrompt", zap.Error(err))
 	}
 
-	ctx := context.Background()
-	go fortuneRefresher(ctx)
+	//ctx := context.Background()
+	//go fortuneRefresher(ctx)
 
 	cmn.MiniLogger.Info("[ OK ] task module initialed", zap.Float64("dailyCheckInScore", dailyCheckInScore))
 }
