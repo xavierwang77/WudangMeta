@@ -135,7 +135,7 @@ func (m *Machine) doRaffle(userId uuid.UUID, raffleCount int64) ([]string, error
 	prizes := m.atomicPrizes.Load().([]cmn.TRafflePrize)
 	if len(prizes) == 0 {
 		z.Warn("no prizes available for raffle")
-		return []string{}, nil
+		return []string{}, fmt.Errorf("您的积分不足，无法进行抽奖")
 	}
 
 	var prizesWon []string
