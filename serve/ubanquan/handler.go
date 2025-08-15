@@ -233,7 +233,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 
 	fastReq.SetRequestURI(url)
 	fastReq.Header.SetMethod("GET")
-	fastReq.Header.Set("Authorization", token.AccessToken)
+	fastReq.Header.Set("access-token", token.AccessToken)
 
 	// 发送请求
 	client := &fasthttp.Client{
