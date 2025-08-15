@@ -371,19 +371,16 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 		if time.Now().UnixMilli() < 1755360000000 {
 			var extraPoints float64
 			if addedCount >= 30 && addedCount <= 100 {
-				extraPoints = 50
+				extraPoints = 60
 			}
-			if addedCount >= 101 && addedCount <= 300 {
-				extraPoints = 100
+			if addedCount >= 101 && addedCount <= 200 {
+				extraPoints = 120
 			}
-			if addedCount >= 301 && addedCount <= 600 {
-				extraPoints = 200
+			if addedCount >= 201 && addedCount <= 300 {
+				extraPoints = 150
 			}
-			if addedCount >= 601 && addedCount <= 900 {
-				extraPoints = 250
-			}
-			if addedCount >= 901 {
-				extraPoints = 300
+			if addedCount >= 301 {
+				extraPoints = 180
 			}
 			if extraPoints > 0 {
 				err = points_core.AddUserPoints(c, tx, userId, extraPoints)
