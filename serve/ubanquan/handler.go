@@ -130,6 +130,24 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 	)
 
 	err = cmn.GormDB.Transaction(func(tx *gorm.DB) error {
+		// 检查该openId是否已被其他用户绑定
+		var existingUserExternal cmn.TUserExternal
+		err = tx.Where("open_id = ? AND platform = ? AND user_id != ?", ubanquanResp.Data.OpenId, ubanquan_core.PlatformName, userId).First(&existingUserExternal).Error
+		if err == nil {
+			// 该openId已被其他用户绑定
+			z.Error("openId already bound to another user", zap.String("openId", ubanquanResp.Data.OpenId), zap.String("existingUserId", existingUserExternal.UserId.String()))
+			status = -1
+			msg = "该优版权账号已被其他用户绑定，不允许重复绑定"
+			return fmt.Errorf("openId already bound to user %s", existingUserExternal.UserId.String())
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			// 查询出错
+			e := fmt.Errorf("failed to check existing openId binding: %w", err)
+			z.Error(e.Error())
+			status = -1
+			msg = "检查优版权账号绑定状态失败"
+			return e
+		}
+
 		// 查找或创建用户外部信息记录
 		var userExternal cmn.TUserExternal
 		err = tx.Where("user_id = ? AND platform = ?", userId, ubanquan_core.PlatformName).First(&userExternal).Error
@@ -159,18 +177,11 @@ func (h *handler) HandleAuthentication(c *gin.Context) {
 				return e
 			}
 		} else {
-			// 更新现有记录
-			userExternal.OpenId = ubanquanResp.Data.OpenId
-			userExternal.NickName = ubanquanResp.Data.NickName
-			userExternal.Avatar = ubanquanResp.Data.HeadImg
-			err = tx.Save(&userExternal).Error
-			if err != nil {
-				e := fmt.Errorf("failed to update user external record: %w", err)
-				z.Error(e.Error())
-				status = -1
-				msg = "更新用户外部信息失败"
-				return e
-			}
+			e := fmt.Errorf("user external record already exists")
+			z.Error(e.Error())
+			status = 1
+			msg = "已绑定优版权帐号，无需重复绑定"
+			return e
 		}
 		return nil
 	})
@@ -341,7 +352,7 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 				// 检查是否为新插入的记录
 				if result.RowsAffected > 0 {
 					// 给用户增加该资产积分
-					err = points_core.AddUserPointsByAsset(c, tx, userId, queryMetaAsset.Id, 1)
+					err = points_core.AddUserPoints(c, tx, userId, queryMetaAsset.Value)
 					if err != nil {
 						e := fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), queryMetaAsset.Id)
 						status = -1
@@ -355,6 +366,36 @@ func (h *handler) HandleUpdateMyAsset(c *gin.Context) {
 				}
 			}
 		}
+
+		// 根据活动规则给用户额外加积分，活动截止时间2025-08-17 00:00:00
+		if time.Now().UnixMilli() < 1755360000000 {
+			var extraPoints float64
+			if addedCount >= 30 && addedCount <= 100 {
+				extraPoints = 50
+			}
+			if addedCount >= 101 && addedCount <= 300 {
+				extraPoints = 100
+			}
+			if addedCount >= 301 && addedCount <= 600 {
+				extraPoints = 200
+			}
+			if addedCount >= 601 && addedCount <= 900 {
+				extraPoints = 250
+			}
+			if addedCount >= 901 {
+				extraPoints = 300
+			}
+			if extraPoints > 0 {
+				err = points_core.AddUserPoints(c, tx, userId, extraPoints)
+				if err != nil {
+					e := fmt.Errorf("failed to add extra user points by addedCount: %w, user_id: %s", err, userId.String())
+					status = -1
+					msg = "添加用户积分失败"
+					return e
+				}
+			}
+		}
+
 		return nil
 	})
 	if err != nil {

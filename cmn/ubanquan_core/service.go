@@ -32,8 +32,6 @@ func UpdateAllUsersAssets(ctx context.Context) ([]*AssetUpdateResult, error) {
 		return []*AssetUpdateResult{}, nil
 	}
 
-	z.Info("starting batch update for all users with ubanquan openId", zap.Int("user_count", len(userExternals)))
-
 	results := make([]*AssetUpdateResult, 0, len(userExternals))
 	successCount := 0
 	failureCount := 0
@@ -229,7 +227,7 @@ func syncUserAssetsToDatabase(ctx context.Context, userId uuid.UUID, cardResp *U
 				}
 
 				// 给用户增加该资产积分
-				err = points_core.AddUserPointsByAsset(ctx, tx, userId, metaAsset.Id, 1)
+				err = points_core.AddUserPoints(ctx, tx, userId, metaAsset.Value)
 				if err != nil {
 					return fmt.Errorf("failed to add user points by asset: %w, user_id: %s, meta_asset_id: %d", err, userId.String(), metaAsset.Id)
 				}

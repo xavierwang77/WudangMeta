@@ -270,8 +270,6 @@ func (h *handler) HandleSMSLogin(c *gin.Context) {
 		return
 	}
 
-	z.Info("user login successful", zap.String("userId", user.Id.String()), zap.String("phone", d.MobilePhone))
-
 	c.JSON(http.StatusOK, cmn.ReplyProto{
 		Status: 0,
 		Msg:    "登录成功",

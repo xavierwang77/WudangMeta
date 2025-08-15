@@ -150,7 +150,7 @@ func (h *handler) HandleDailyCheckIn(c *gin.Context) {
 		// 今天还没有签到，创建签到记录
 		checkInRecord = cmn.TUserCheckIn{
 			UserId:    userId,
-			Points:    dailyCheckInScore,
+			Points:    dailyCheckInPoints,
 			CreatedAt: now.UnixMilli(),
 		}
 
@@ -160,34 +160,10 @@ func (h *handler) HandleDailyCheckIn(c *gin.Context) {
 			return err
 		}
 
-		// 查询用户积分记录
-		var userPoints cmn.TUserPoints
-		err = tx.Where("user_id = ?", userId).First(&userPoints).Error
+		// 累加用户积分
+		err = points_core.AddUserPoints(c, tx, userId, dailyCheckInPoints)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// 用户积分记录不存在，先初始化
-				err = points_core.InitializeUserPoints(c, tx, userId)
-				if err != nil {
-					z.Error("failed to initialize user points", zap.Error(err), zap.String("user_id", userId.String()))
-					return err
-				}
-				// 重新查询用户积分记录
-				err = tx.Where("user_id = ?", userId).First(&userPoints).Error
-				if err != nil {
-					z.Error("failed to query user points after initialization", zap.Error(err), zap.String("user_id", userId.String()))
-					return err
-				}
-			} else {
-				z.Error("failed to query user points", zap.Error(err), zap.String("user_id", userId.String()))
-				return err
-			}
-		}
-
-		// 累加签到积分到用户总积分
-		newTotalPoints := userPoints.DefaultPoints + dailyCheckInScore
-		err = tx.Model(&userPoints).Update("default_points", newTotalPoints).Error
-		if err != nil {
-			z.Error("failed to update user points", zap.Error(err), zap.String("user_id", userId.String()))
+			z.Error("failed to add user points", zap.Error(err), zap.String("user_id", userId.String()))
 			return err
 		}
 
