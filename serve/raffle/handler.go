@@ -452,8 +452,8 @@ func (h *handler) HandleQueryPrizes(c *gin.Context) {
 	}
 
 	// 限制每页最大数量
-	if size > 100 {
-		size = 100
+	if size > 1000 {
+		size = 1000
 	}
 
 	// 计算偏移量

@@ -311,19 +311,24 @@ func (VRaffleWinnerInfo) TableName() string {
 
 // VRaffleDesignatedUserPrizeInfo 抽奖指定获奖者奖品信息视图
 type VRaffleDesignatedUserPrizeInfo struct {
-	Id             int64     `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`                       // ID
-	UserId         uuid.UUID `json:"userId" gorm:"column:user_id;type:uuid;not null"`                                // 用户ID
-	PrizeId        int64     `json:"prizeId" gorm:"column:prize_id;type:bigint;not null"`                            // 奖品ID
-	CreatedAt      int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"`            // 创建时间
-	UpdatedAt      int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"`            // 更新时间
-	Name           string    `json:"name" gorm:"column:name;type:varchar(100);not null;index"`                       // 奖品名称
-	Probability    float64   `json:"probability" gorm:"column:probability;type:float;not null"`                      // 奖品概率
-	TotalCount     int64     `json:"totalCount" gorm:"column:total_count;type:bigint;not null"`                      // 奖品总数
-	RemainCount    int64     `json:"remainCount" gorm:"column:remain_count;type:bigint;not null"`                    // 剩余奖品数量
-	Cost           float64   `json:"cost" gorm:"column:cost;type:float;not null"`                                    // 奖品成本
-	Status         string    `json:"status" gorm:"column:status;type:varchar(5)"`                                    // 奖品状态 00:启用 02:禁用
-	PrizeCreatedAt int64     `json:"prizeCreatedAt" gorm:"column:prize_created_at;type:bigint;autoCreateTime:milli"` // 奖品创建时间
-	PrizeUpdatedAt int64     `json:"prizeUpdatedAt" gorm:"column:prize_updated_at;type:bigint;autoUpdateTime:milli"` // 奖品更新时间
+	Id               int64     `json:"id" gorm:"column:id;type:bigint;primaryKey;autoIncrement"`                       // ID
+	UserId           uuid.UUID `json:"userId" gorm:"column:user_id;type:uuid;not null"`                                // 用户ID
+	PrizeId          int64     `json:"prizeId" gorm:"column:prize_id;type:bigint;not null"`                            // 奖品ID
+	CreatedAt        int64     `json:"createdAt" gorm:"column:created_at;type:bigint;autoCreateTime:milli"`            // 创建时间
+	UpdatedAt        int64     `json:"updatedAt" gorm:"column:updated_at;type:bigint;autoUpdateTime:milli"`            // 更新时间
+	PrizeName        string    `json:"prizeName" gorm:"column:prize_name;type:varchar(100);not null;index"`            // 奖品名称
+	PrizeProbability float64   `json:"prizeProbability" gorm:"column:prize_probability;type:float;not null"`           // 奖品概率
+	PrizeTotalCount  int64     `json:"prizeTotalCount" gorm:"column:prize_total_count;type:bigint;not null"`           // 奖品总数
+	PrizeRemainCount int64     `json:"prizeRemainCount" gorm:"column:prize_remain_count;type:bigint;not null"`         // 剩余奖品数量
+	PrizeCost        float64   `json:"prizeCost" gorm:"column:prize_cost;type:float;not null"`                         // 奖品成本
+	PrizeStatus      string    `json:"prizeStatus" gorm:"column:prize_status;type:varchar(5)"`                         // 奖品状态 00:启用 02:禁用
+	PrizeCreatedAt   int64     `json:"prizeCreatedAt" gorm:"column:prize_created_at;type:bigint;autoCreateTime:milli"` // 奖品创建时间
+	PrizeUpdatedAt   int64     `json:"prizeUpdatedAt" gorm:"column:prize_updated_at;type:bigint;autoUpdateTime:milli"` // 奖品更新时间
+	UserOfficialName string    `json:"userOfficialName" gorm:"column:user_official_name;type:varchar(50)"`             // 用户真实姓名
+	UserNickName     string    `json:"userNickName" gorm:"column:user_nick_name;type:varchar(50)"`                     // 用户昵称
+	UserEmail        string    `json:"userEmail" gorm:"column:user_email;type:varchar(30)"`                            // 用户邮箱
+	UserMobilePhone  string    `json:"userMobilePhone" gorm:"column:user_mobile_phone;type:varchar(11);uniqueIndex"`   // 用户手机号
+	UserLoginTime    int64     `json:"userLoginTime" gorm:"column:user_login_time;type:bigint"`                        // 用户最近登录时间
 }
 
 func (VRaffleDesignatedUserPrizeInfo) TableName() string {

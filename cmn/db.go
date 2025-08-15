@@ -247,16 +247,22 @@ func initView(db *gorm.DB) error {
         rdu.prize_id,
         rdu.created_at,
         rdu.updated_at,
-        rp.name,
-        rp.probability,
-        rp.total_count,
-        rp.remain_count,
-        rp.cost,
-        rp.status,
+        rp.name AS prize_name,
+        rp.probability AS prize_probability,
+        rp.total_count AS prize_total_count,
+        rp.remain_count AS prize_remain_count,
+        rp.cost AS prize_cost,
+        rp.status AS prize_status,
         rp.created_at AS prize_created_at,
-        rp.updated_at AS prize_updated_at
+        rp.updated_at AS prize_updated_at,
+        u.official_name AS user_official_name,
+        u.nick_name AS user_nick_name,
+        u.email AS user_email,
+        u.mobile_phone AS user_mobile_phone,
+        u.login_time AS user_login_time
     `).
-		Joins("LEFT JOIN t_raffle_prize AS rp ON rdu.prize_id = rp.id")
+		Joins("LEFT JOIN t_raffle_prize AS rp ON rdu.prize_id = rp.id").
+		Joins("LEFT JOIN t_user AS u ON rdu.user_id = u.id")
 
 	// 创建 v_raffle_designated_user_prize_info 视图
 	err = db.Migrator().CreateView(
