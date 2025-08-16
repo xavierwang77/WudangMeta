@@ -113,6 +113,8 @@ func initProdLogger(logFilePath string) error {
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	// 生产环境通常记录短路径调用者
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	// 生产环境通常使用字符串格式的 Duration 编码
+	encoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 	// 生产环境不使用彩色级别编码，保留默认
 	// encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 

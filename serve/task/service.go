@@ -145,11 +145,11 @@ func AnalyzeAndSaveFortune(ctx context.Context, db *gorm.DB, userId uuid.UUID, n
 
 	// 只有当天第一次分析运势才增加积分
 	if todayRowCount == 0 {
-		err = points_core.AddUserPoints(ctx, db, userId, luckTendencyPoints)
+		err = points_core.AddUserPoints(ctx, db, userId, fortuneAnalysisPoints)
 		if err != nil {
 			return Fortune{}, 0, err
 		}
-		addedPoints = luckTendencyPoints
+		addedPoints = fortuneAnalysisPoints
 	}
 
 	return fortune, addedPoints, nil

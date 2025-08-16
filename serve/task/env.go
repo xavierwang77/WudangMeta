@@ -11,9 +11,9 @@ import (
 var z *zap.Logger
 
 var (
-	dailyCheckInPoints float64 // 每日签到积分
-	luckTendencyPoints float64 // 运势分析积分
-	llmPrompt          LlmPrompt
+	dailyCheckInPoints    float64 // 每日签到积分
+	fortuneAnalysisPoints float64 // 运势分析积分
+	llmPrompt             LlmPrompt
 )
 
 func Init() {
@@ -31,8 +31,8 @@ func Init() {
 		z.Fatal("[ FAIL ] daily check in points must be greater than 0")
 	}
 	// 初始化运势分析积分
-	luckTendencyPoints = viper.GetFloat64("task.reward.luckTendencyPoints")
-	if luckTendencyPoints <= 0 {
+	fortuneAnalysisPoints = viper.GetFloat64("task.reward.fortuneAnalysisPoints")
+	if fortuneAnalysisPoints <= 0 {
 		z.Fatal("[ FAIL ] luck tendency points must be greater than 0")
 	}
 
@@ -45,7 +45,7 @@ func Init() {
 	//ctx := context.Background()
 	//go fortuneRefresher(ctx)
 
-	cmn.MiniLogger.Info("[ OK ] task module initialed", zap.Float64("dailyCheckInPoints", dailyCheckInPoints))
+	cmn.MiniLogger.Info("[ OK ] task module initialed", zap.Float64("dailyCheckInPoints", dailyCheckInPoints), zap.Float64("fortuneAnalysisPoints", fortuneAnalysisPoints))
 }
 
 func initLlmPrompt() error {
